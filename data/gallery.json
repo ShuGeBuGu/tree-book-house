@@ -6,39 +6,6 @@
     "englishName": "Tree Book House",
     "intro": "一些被光选中的瞬间，住在这里，也等你带走。"
   },
-  "groups": [
-    {
-      "id": "group-ff9ojc",
-      "name": "原神·哥伦比亚",
-      "description": ""
-    }
-  ],
-  "photos": [
-    {
-      "id": "20261106-124310-by19",
-      "group": "group-ff9ojc",
-      "title": "4k壁纸",
-      "date": "2026-11-06",
-      "original": {
-        "width": 3840,
-        "height": 2160
-      },
-      "variants": {
-        "large": {
-          "src": "media/group-ff9ojc/20261106-124310-by19/large.jpg",
-          "width": 2560,
-          "height": 1440,
-          "bytes": 679063,
-          "ext": "jpg"
-        },
-        "web": {
-          "src": "media/group-ff9ojc/20261106-124310-by19/web.jpg",
-          "width": 1280,
-          "height": 720,
-          "bytes": 175145,
-          "ext": "jpg"
-        }
-      }
-    }
-  ]
+  "groups": [],
+  "photos": []
 }
