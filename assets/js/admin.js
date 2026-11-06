@@ -1297,57 +1297,77 @@
     els.refreshButton.disabled = true;
     els.removeDemoButton.disabled = true;
     try {
-      await fetchRepositoryState();
       const ids = new Set(photoIds.map(String));
-      const removing = (state.manifest.photos || []).filter((photo) => ids.has(String(photo.id)));
-      if (!removing.length) throw new Error('这些照片已经不在仓库里了。');
-      const remainingPhotos = (state.manifest.photos || []).filter((photo) => !ids.has(String(photo.id)));
-      const remainingGroupIds = new Set(remainingPhotos.map((photo) => String(photo.group)));
-      const remainingGroups = (state.manifest.groups || []).filter((group) => remainingGroupIds.has(String(group.id)));
-      const updated = {
-        ...state.manifest,
-        photos: remainingPhotos,
-        groups: remainingGroups,
-        updatedAt: todayISO(),
-      };
-
-      const deletePaths = new Set();
-      removing.forEach((photo) => {
-        ['large', 'web'].forEach((key) => {
-          const src = photo.variants?.[key]?.src;
-          if (src) deletePaths.add(src);
-        });
-        if (photo.video?.src) deletePaths.add(photo.video.src);
-        if (photo.video?.poster && !deletePaths.has(photo.video.poster)) {
-          // Only delete a poster if it is unique to this photo.
-          const usedElsewhere = remainingPhotos.some((other) => other.video?.poster === photo.video.poster);
-          if (!usedElsewhere) deletePaths.add(photo.video.poster);
+      let committed = false;
+      let lastError = null;
+      for (let attempt = 0; attempt < 3 && !committed; attempt += 1) {
+        await fetchRepositoryState();
+        const removing = (state.manifest.photos || []).filter((photo) => ids.has(String(photo.id)));
+        if (!removing.length) {
+          // A previous attempt may have committed successfully just before a
+          // transient network/ref error; treat the desired end state as success.
+          committed = true;
+          break;
         }
-      });
+        const remainingPhotos = (state.manifest.photos || []).filter((photo) => !ids.has(String(photo.id)));
+        const remainingGroupIds = new Set(remainingPhotos.map((photo) => String(photo.group)));
+        const remainingGroups = (state.manifest.groups || []).filter((group) => remainingGroupIds.has(String(group.id)));
+        const updated = {
+          ...state.manifest,
+          photos: remainingPhotos,
+          groups: remainingGroups,
+          updatedAt: todayISO(),
+        };
 
-      const treeEntries = [...deletePaths].map((path) => ({ path, mode: '100644', type: 'blob', sha: null }));
-      const manifestBlob = new Blob([JSON.stringify(updated, null, 2)], { type: 'application/json' });
-      const manifestSha = (await apiCreateBlob(manifestBlob)).sha;
-      treeEntries.push({ path: 'data/gallery.json', mode: '100644', type: 'blob', sha: manifestSha });
-      const tree = await api(`${repoApiPath()}/git/trees`, {
-        method: 'POST',
-        body: { base_tree: state.treeSha, tree: treeEntries },
-      });
-      const commit = await api(`${repoApiPath()}/git/commits`, {
-        method: 'POST',
-        body: {
-          message: `Remove ${removing.length} photo${removing.length === 1 ? '' : 's'} · Tree Book House`,
-          tree: tree.sha,
-          parents: [state.headSha],
-        },
-      });
-      await api(`${repoApiPath()}/git/refs/heads/${branchPath()}`, {
-        method: 'PATCH',
-        body: { sha: commit.sha, force: false },
-      });
-      state.manifest = updated;
-      state.headSha = commit.sha;
-      state.treeSha = tree.sha;
+        const deletePaths = new Set();
+        removing.forEach((photo) => {
+          ['large', 'web'].forEach((key) => {
+            const src = photo.variants?.[key]?.src;
+            if (src) deletePaths.add(src);
+          });
+          if (photo.video?.src) deletePaths.add(photo.video.src);
+          if (photo.video?.poster && !deletePaths.has(photo.video.poster)) {
+            // Only delete a poster if it is unique to this photo.
+            const usedElsewhere = remainingPhotos.some((other) => other.video?.poster === photo.video.poster);
+            if (!usedElsewhere) deletePaths.add(photo.video.poster);
+          }
+        });
+
+        try {
+          const treeEntries = [...deletePaths].map((path) => ({ path, mode: '100644', type: 'blob', sha: null }));
+          const manifestBlob = new Blob([JSON.stringify(updated, null, 2)], { type: 'application/json' });
+          const manifestSha = (await apiCreateBlob(manifestBlob)).sha;
+          treeEntries.push({ path: 'data/gallery.json', mode: '100644', type: 'blob', sha: manifestSha });
+          const tree = await api(`${repoApiPath()}/git/trees`, {
+            method: 'POST',
+            body: { base_tree: state.treeSha, tree: treeEntries },
+          });
+          const commit = await api(`${repoApiPath()}/git/commits`, {
+            method: 'POST',
+            body: {
+              message: `Remove ${removing.length} photo${removing.length === 1 ? '' : 's'} · Tree Book House`,
+              tree: tree.sha,
+              parents: [state.headSha],
+            },
+          });
+          await api(`${repoApiPath()}/git/refs/heads/${branchPath()}`, {
+            method: 'PATCH',
+            body: { sha: commit.sha, force: false },
+          });
+          state.manifest = updated;
+          state.headSha = commit.sha;
+          state.treeSha = tree.sha;
+          committed = true;
+        } catch (error) {
+          lastError = error;
+          const retryable = error?.status === 409 || error?.status === 422;
+          if (!retryable || attempt >= 2) throw error;
+          // GitHub can return a transient conflict if the branch moved between
+          // our ref read and the update. Refresh the latest head and try again.
+          await sleep(800 + attempt * 700);
+        }
+      }
+      if (!committed) throw lastError || new Error('移除失败，请刷新后再试。');
       state.lastPublish = null;
       renderGroupOptions();
       renderManage();
@@ -1355,7 +1375,9 @@
       resetPublishOutput();
       toast('照片已从网站移除');
     } catch (error) {
-      toast(humanError(error), 'error');
+      console.error('[Tree Book House] delete failed:', error);
+      const detail = error?.data?.message ? `（${error.data.message}）` : '';
+      toast(`${humanError(error)}${detail}`, 'error');
     } finally {
       state.busy = false;
       els.refreshButton.disabled = !state.connected;
