@@ -11,9 +11,67 @@
       "id": "group-16dhjqu",
       "name": "原神☆哥伦比娅",
       "description": ""
+    },
+    {
+      "id": "group-cheli1",
+      "name": "测试预览",
+      "description": ""
     }
   ],
   "photos": [
+    {
+      "id": "20261106-134658-47e5",
+      "group": "group-cheli1",
+      "title": "测试动态预览 · 请删除",
+      "note": "测试 720P 预览图与 720P 动态壁纸切换。",
+      "date": "2026-11-06",
+      "original": {
+        "width": 2048,
+        "height": 2048
+      },
+      "preview": {
+        "src": "media/group-cheli1/20261106-134658-47e5/preview.jpg",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 126477,
+        "ext": "jpg"
+      },
+      "variants": {
+        "large": {
+          "src": "media/group-cheli1/20261106-134658-47e5/large.jpg",
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1057973,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/group-cheli1/20261106-134658-47e5/web.webp",
+          "width": 852,
+          "height": 1100,
+          "bytes": 144658,
+          "ext": "webp"
+        }
+      },
+      "video": {
+        "src": "media/group-cheli1/20261106-134658-47e5/wallpaper.webm",
+        "poster": "media/group-cheli1/20261106-134658-47e5/web.webp",
+        "type": "video/webm",
+        "ext": "webm",
+        "seconds": 2.9,
+        "bytes": 307755,
+        "width": 1920,
+        "height": 1080,
+        "preview": {
+          "src": "media/group-cheli1/20261106-134658-47e5/video-preview.webm",
+          "width": 1280,
+          "height": 720,
+          "seconds": 2.9,
+          "bytes": 201348,
+          "type": "video/webm",
+          "ext": "webm"
+        }
+      }
+    },
     {
       "id": "20261106-131535-a6k4",
       "group": "group-16dhjqu",
