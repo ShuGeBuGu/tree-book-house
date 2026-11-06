@@ -124,7 +124,14 @@
 
 ## 第 6 步（可选）：用 Cloudflare Pages 加速
 
-GitHub Pages 在中国大陆有时会慢。你可以让同一个仓库同时发布到 Cloudflare Pages，仍然免费，而且带宽额度更宽松。
+> **当前状态：已配置完成。**
+>
+> - 镜像地址：<https://tree-book-house.pages.dev/>
+> - Cloudflare 已连接 `ShuGeBuGu/tree-book-house` 仓库的 `main` 分支
+> - 以后在管理台发布照片，GitHub Pages 和 Cloudflare Pages 都会自动更新
+> - Cloudflare Pages 同样不能保证中国大陆所有网络都稳定，但可以作为 GitHub Pages 打不开时的备用入口
+
+如果需要重新创建，或用别的账号部署，步骤是：
 
 1. 注册 <https://dash.cloudflare.com/>；
 2. 左侧 **Workers & Pages → Create → Pages → Connect to Git**；

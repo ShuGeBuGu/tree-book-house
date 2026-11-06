@@ -3,6 +3,7 @@
 一个不需要服务器、不会自己关机的静态照片下载站。访客推开门，就能按分组浏览照片；点开照片后，可以下载高清版、轻巧版，以及一段静音循环的动态背景视频。
 
 - **网站地址**：<https://shugebugu.github.io/tree-book-house/>
+- **备用镜像**：<https://tree-book-house.pages.dev/>（Cloudflare Pages，自动跟随 GitHub 更新）
 - **管理台**：独立隐藏地址（不在网站导航中，地址已单独发给你）
 - **GitHub 仓库**：<https://github.com/ShuGeBuGu/tree-book-house>
 - **状态**：已上线；管理台写入需要 Token（见 [DEPLOY.md](DEPLOY.md) 第 4 步）。
