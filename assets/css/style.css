@@ -367,7 +367,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   background:
     linear-gradient(90deg, transparent 46%, rgba(121, 90, 76, .18) 47% 53%, transparent 54%),
     linear-gradient(155deg, #f9e8d2, #eac8a7);
-  transition: transform .55s var(--ease-spring);
+  transition: transform .55s var(--ease-soft);
   backface-visibility: hidden;
 }
 .mini-door__panel--left { left: 0; border-radius: 24px 0 0 6px; transform-origin: left center; }
