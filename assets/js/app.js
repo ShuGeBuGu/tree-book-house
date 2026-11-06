@@ -569,7 +569,7 @@
         els.mediaBadge.hidden = true;
         els.mediaHint.hidden = true;
       };
-      setText(els.mediaHint, reduceMotion ? '点击画面播放动态预览' : '点击画面暂停动态预览');
+      setText(els.mediaHint, reduceMotion ? '点击画面播放动态壁纸' : '点击画面暂停动态壁纸');
     }
 
     const videoMeta = [];
@@ -583,7 +583,7 @@
       els.downloadVideo.hidden = false;
       els.downloadVideo.href = photo.video.src;
       els.downloadVideo.download = `${safeName(photo.title)}-LOOP.${ext}`;
-      els.downloadVideo.setAttribute('aria-label', `下载动态背景，${videoMeta.join('，')}`);
+      els.downloadVideo.setAttribute('aria-label', `下载动态壁纸，${videoMeta.join('，')}`);
       setText(els.downloadVideoMeta, videoMeta.join(' · '));
     }
 
@@ -602,10 +602,10 @@
           if (els.lightboxVideo.paused) {
             const attempt = els.lightboxVideo.play();
             if (attempt?.catch) attempt.catch(() => {});
-            setText(els.mediaHint, '点击画面暂停动态预览');
+            setText(els.mediaHint, '点击画面暂停动态壁纸');
           } else {
             els.lightboxVideo.pause();
-            setText(els.mediaHint, '点击画面播放动态预览');
+            setText(els.mediaHint, '点击画面播放动态壁纸');
           }
         }
       : null;

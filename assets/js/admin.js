@@ -7,12 +7,11 @@
 
   const API = 'https://api.github.com';
   const CONFIG_KEY = 'tbh-admin-config-v1';
-  const IMAGE_MAX = 40 * 1024 * 1024;
+  const IMAGE_MAX = 80 * 1024 * 1024;
   const QUEUE_MAX = 30;
-  const LARGE_EDGE = 2560;
-  const WEB_EDGE = 1280;
   const VIDEO_MAX = 60 * 1024 * 1024;
   const VIDEO_EXTENSIONS = new Set(['mp4', 'webm']);
+  const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif']);
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -39,8 +38,22 @@
     newGroupFields: $('#newGroupFields'),
     newGroupName: $('#newGroupName'),
     newGroupDesc: $('#newGroupDesc'),
-    dropzone: $('#dropzone'),
-    fileInput: $('#fileInput'),
+    versionEditor: $('#versionEditor'),
+    versionSlots: $('#versionSlots'),
+    resetEditor: $('#resetEditor'),
+    addPhotoButton: $('#addPhotoButton'),
+    editorHint: $('#editorHint'),
+    photoTitle: $('#photoTitle'),
+    photoNote: $('#photoNote'),
+    largeInput: $('#largeInput'),
+    webInput: $('#webInput'),
+    wallpaperInput: $('#wallpaperInput'),
+    largePreview: $('#largePreview'),
+    webPreview: $('#webPreview'),
+    wallpaperPreview: $('#wallpaperPreview'),
+    largeFile: $('#largeFile'),
+    webFile: $('#webFile'),
+    wallpaperFile: $('#wallpaperFile'),
     queueWrap: $('#queueWrap'),
     queueList: $('#queueList'),
     queueCount: $('#queueCount'),
@@ -81,6 +94,11 @@
     headSha: null,
     treeSha: null,
     queue: [],
+    editor: {
+      large: null,
+      web: null,
+      wallpaper: null,
+    },
     busy: false,
     lastPublish: null,
     autoConnecting: false,
@@ -364,7 +382,7 @@
     els.manageState.textContent = '已同步';
     els.manageBody.hidden = false;
     els.refreshButton.disabled = false;
-    els.dropzone.classList.remove('is-disabled');
+    updateEditorState();
     renderGroupOptions();
     renderManage();
     refreshPublishVisibility();
@@ -380,7 +398,7 @@
     els.manageState.textContent = '待连接';
     els.manageBody.hidden = true;
     els.refreshButton.disabled = true;
-    els.dropzone.classList.add('is-disabled');
+    updateEditorState();
     els.publishButton.disabled = true;
   }
 
@@ -450,7 +468,7 @@
     return { id: String(group.id), name: group.name || '未命名分组', description: group.description || '', isNew: false };
   }
 
-  /* ---------------- image & video generation ---------------- */
+  /* ---------------- editor: three uploaded versions ---------------- */
   async function decodeImage(file) {
     if (window.createImageBitmap) {
       try {
@@ -478,53 +496,38 @@
     };
   }
 
-  function canvasToBlob(canvas, type, quality) {
-    return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('图片压缩失败，请换一张图片试试。'));
-      }, type, quality);
-    });
+  function extensionOf(file) {
+    return String(file?.name || '').split('.').pop().toLowerCase();
   }
 
-  async function makeJpegVariant(source, maxEdge, quality) {
-    const src = sourceSize(source);
-    if (!src.width || !src.height) throw new Error('无法读取图片尺寸。');
-    const scale = Math.min(1, maxEdge / Math.max(src.width, src.height));
-    const width = Math.max(1, Math.round(src.width * scale));
-    const height = Math.max(1, Math.round(src.height * scale));
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false });
-    ctx.fillStyle = '#fff8ef';
-    ctx.fillRect(0, 0, width, height);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(source, 0, 0, width, height);
-    const blob = await canvasToBlob(canvas, 'image/jpeg', quality);
-    return { blob, width, height };
-  }
-
-  function isVideoFile(file) {
-    if (file.type === 'video/mp4' || file.type === 'video/webm') return true;
-    const ext = String(file.name || '').split('.').pop().toLowerCase();
-    return VIDEO_EXTENSIONS.has(ext);
+  function imageExtension(file) {
+    const ext = extensionOf(file);
+    if (IMAGE_EXTENSIONS.has(ext)) return ext;
+    if (file.type === 'image/jpeg') return 'jpg';
+    if (file.type === 'image/png') return 'png';
+    if (file.type === 'image/webp') return 'webp';
+    if (file.type === 'image/avif') return 'avif';
+    return '';
   }
 
   function isImageFile(file) {
     if (file.type.startsWith('image/')) return true;
-    return /\.(jpe?g|png|webp|avif)$/i.test(String(file.name || ''));
+    return IMAGE_EXTENSIONS.has(extensionOf(file));
+  }
+
+  function isVideoFile(file) {
+    if (file.type === 'video/mp4' || file.type === 'video/webm') return true;
+    return VIDEO_EXTENSIONS.has(extensionOf(file));
   }
 
   function videoExtension(file) {
-    const ext = String(file.name || '').split('.').pop().toLowerCase();
+    const ext = extensionOf(file);
     return VIDEO_EXTENSIONS.has(ext) ? ext : '';
   }
 
   async function readVideoMetadata(file) {
     const ext = videoExtension(file);
-    if (!ext) throw new Error('视频请使用 MP4 或 WebM 格式。');
+    if (!ext) throw new Error('动态壁纸请使用 MP4 或 WebM 格式。');
     if (file.type && !['video/mp4', 'video/webm'].includes(file.type)) {
       throw new Error('这个视频的浏览器格式不是 MP4 / WebM，请先转换成 MP4 再上传。');
     }
@@ -557,86 +560,212 @@
     }
   }
 
-  function videoFileBase(name) {
-    return String(name || '').replace(/\.[^.]+$/, '').trim().toLowerCase();
+  function slotLabel(kind) {
+    return kind === 'wallpaper' ? '动态壁纸' : kind === 'large' ? '高清版' : '轻巧版';
   }
 
-  async function attachVideoToItem(item, file) {
-    const meta = await readVideoMetadata(file);
-    item.video = meta;
-    item.statusText = item.status === 'waiting' ? '已附带动态视频，等待发布' : item.statusText;
-    const li = $(`.queue-item[data-key="${esc(item.key)}"]`, els.queueList);
-    if (li) renderQueueVideo(item, li);
-    return meta;
-  }
-
-  function pickVideoForItem(item) {
-    if (state.busy) return;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/mp4,video/webm';
-    input.addEventListener('change', async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const meta = await attachVideoToItem(item, file);
-        updateQueueItem(item);
-        updatePublishSummary();
-        toast(`已附加视频「${meta.name}」`);
-      } catch (error) {
-        toast(error.message || '视频添加失败', 'error');
-      }
-    });
-    input.click();
-  }
-
-  function removeItemVideo(item) {
-    if (state.busy) return;
-    item.video = null;
-    item.statusText = item.status === 'waiting' ? '等待发布' : item.statusText;
-    const li = $(`.queue-item[data-key="${esc(item.key)}"]`, els.queueList);
-    if (li) renderQueueVideo(item, li);
-    updateQueueItem(item);
-    updatePublishSummary();
-    toast('已移除这张照片的动态视频');
-  }
-
-  function renderQueueVideo(item, li) {
-    const wrap = $('.queue-video', li);
-    if (!wrap) return;
-    wrap.textContent = '';
-    if (item.video) {
-      const chip = document.createElement('span');
-      chip.className = 'queue-video-chip';
-      const detail = [formatBytes(item.video.bytes), item.video.seconds ? `${item.video.seconds} 秒` : ''].filter(Boolean).join(' · ');
-      chip.title = `${item.video.name} · ${detail}`;
-      chip.innerHTML = '<span aria-hidden="true">▸</span>';
-      const name = document.createElement('span');
-      name.className = 'queue-video-chip__name';
-      name.textContent = item.video.name;
-      const meta = document.createElement('small');
-      meta.textContent = detail;
-      chip.append(name, meta);
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'queue-video-clear';
-      remove.setAttribute('aria-label', `移除视频 ${item.video.name}`);
-      remove.textContent = '×';
-      remove.addEventListener('click', () => removeItemVideo(item));
-      const replace = document.createElement('button');
-      replace.type = 'button';
-      replace.className = 'queue-video-replace';
-      replace.textContent = '更换';
-      replace.addEventListener('click', () => pickVideoForItem(item));
-      wrap.append(chip, replace, remove);
-    } else {
-      const add = document.createElement('button');
-      add.type = 'button';
-      add.className = 'queue-video-add';
-      add.innerHTML = '<span aria-hidden="true">＋</span> 添加动态视频（可选）';
-      add.addEventListener('click', () => pickVideoForItem(item));
-      wrap.appendChild(add);
+  function slotDetails(kind, data) {
+    if (kind === 'wallpaper') {
+      return [data.seconds ? `${data.seconds} 秒` : '', formatBytes(data.bytes)].filter(Boolean).join(' · ');
     }
+    return `${data.width} × ${data.height} · ${formatBytes(data.bytes)}`;
+  }
+
+  function renderEditorSlot(kind) {
+    const label = $(`.version-slot[data-slot="${esc(kind)}"]`, els.versionSlots);
+    if (!label) return;
+    const data = state.editor[kind];
+    label.classList.toggle('has-file', Boolean(data));
+    const previewWrap = $('.version-slot__preview', label);
+    const fileEl = kind === 'wallpaper' ? els.wallpaperFile : kind === 'large' ? els.largeFile : els.webFile;
+    if (previewWrap) previewWrap.hidden = !data;
+    if (fileEl) {
+      fileEl.hidden = !data;
+      fileEl.textContent = data ? `${data.name} · ${slotDetails(kind, data)}` : '';
+    }
+    if (kind === 'wallpaper') {
+      const video = els.wallpaperPreview;
+      if (data) {
+        video.src = data.previewUrl;
+        video.hidden = false;
+      } else {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+        video.hidden = true;
+      }
+      return;
+    }
+    const image = kind === 'large' ? els.largePreview : els.webPreview;
+    if (data) {
+      image.src = data.previewUrl;
+      image.hidden = false;
+    } else {
+      image.removeAttribute('src');
+      image.hidden = true;
+    }
+  }
+
+  function setEditorSlot(kind, data) {
+    const previous = state.editor[kind];
+    if (previous?.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+    state.editor[kind] = data;
+    renderEditorSlot(kind);
+    updateEditorState();
+  }
+
+  function clearEditorSlot(kind) {
+    const previous = state.editor[kind];
+    if (previous?.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+    state.editor[kind] = null;
+    renderEditorSlot(kind);
+  }
+
+  function resetEditor({ silent = false } = {}) {
+    ['large', 'web', 'wallpaper'].forEach((kind) => clearEditorSlot(kind));
+    els.photoTitle.value = '';
+    els.photoNote.value = '';
+    ['largeInput', 'webInput', 'wallpaperInput'].forEach((key) => { if (els[key]) els[key].value = ''; });
+    updateEditorState();
+    if (!silent) toast('已清空当前照片的三个选择');
+  }
+
+  function editorMissing() {
+    const missing = [];
+    if (!state.editor.large) missing.push('高清版');
+    if (!state.editor.web) missing.push('轻巧版');
+    return missing;
+  }
+
+  function updateEditorState() {
+    if (!els.addPhotoButton) return;
+    const missing = editorMissing();
+    const full = state.queue.length >= QUEUE_MAX;
+    const ready = missing.length === 0 && !full && state.connected && !state.busy;
+    els.addPhotoButton.disabled = !ready;
+    let hint = '';
+    if (full) hint = `待发布列表已满（${QUEUE_MAX} 张），请先发布或清空。`;
+    else if (missing.length) hint = `还需要选择${missing.join('和')}。`;
+    else if (!state.editor.wallpaper) hint = '高清版和轻巧版已准备好；动态壁纸可选。';
+    else hint = '三个版本都准备好了，可以添加到待发布。';
+    if (els.editorHint) els.editorHint.textContent = hint;
+  }
+
+  function setEditorBusy(busy) {
+    [els.largeInput, els.webInput, els.wallpaperInput, els.photoTitle, els.photoNote, els.resetEditor].forEach((control) => {
+      if (control) control.disabled = busy;
+    });
+    updateEditorState();
+  }
+
+  async function handleSlotFile(kind, file) {
+    if (!file || state.busy) return;
+    try {
+      if (kind === 'wallpaper') {
+        if (!isVideoFile(file)) throw new Error('动态壁纸请选择 MP4 或 WebM 视频。');
+        const meta = await readVideoMetadata(file);
+        setEditorSlot(kind, { ...meta, previewUrl: URL.createObjectURL(file) });
+        toast(`已选择动态壁纸「${file.name}」`);
+        return;
+      }
+
+      if (!isImageFile(file)) throw new Error('请选择 JPG / PNG / WebP / AVIF 图片。');
+      const ext = imageExtension(file);
+      if (!ext) throw new Error('图片格式请使用 JPG / PNG / WebP / AVIF。');
+      if (file.size > IMAGE_MAX) {
+        throw new Error(`图片超过 ${Math.round(IMAGE_MAX / 1024 / 1024)} MB，请选择小一些的文件。`);
+      }
+      const source = await decodeImage(file);
+      const size = sourceSize(source);
+      if (source.close) source.close();
+      if (!size.width || !size.height) throw new Error('无法读取这张图片的尺寸。');
+      setEditorSlot(kind, {
+        file,
+        name: file.name,
+        ext,
+        type: file.type,
+        width: size.width,
+        height: size.height,
+        bytes: file.size,
+        previewUrl: URL.createObjectURL(file),
+      });
+      if (kind === 'large' && !els.photoTitle.value.trim()) {
+        els.photoTitle.value = fileNameBase(file.name);
+      }
+      toast(`已选择${slotLabel(kind)}「${file.name}」`);
+    } catch (error) {
+      toast(error.message || '文件读取失败', 'error');
+    } finally {
+      const input = kind === 'wallpaper' ? els.wallpaperInput : kind === 'large' ? els.largeInput : els.webInput;
+      if (input) input.value = '';
+      updateEditorState();
+    }
+  }
+
+  function copyEditorFile(data, kind) {
+    if (!data) return null;
+    if (kind === 'wallpaper') {
+      return {
+        file: data.file,
+        name: data.name,
+        ext: data.ext,
+        type: data.type,
+        bytes: data.bytes,
+        width: data.width,
+        height: data.height,
+        seconds: data.seconds,
+      };
+    }
+    return {
+      file: data.file,
+      name: data.name,
+      ext: data.ext,
+      type: data.type,
+      bytes: data.bytes,
+      width: data.width,
+      height: data.height,
+    };
+  }
+
+  function addEditorPhoto() {
+    if (!state.connected) {
+      toast('请先连接仓库', 'error');
+      return;
+    }
+    if (state.busy) return;
+    if (state.queue.length >= QUEUE_MAX) {
+      toast(`待发布列表已满（最多 ${QUEUE_MAX} 张）`, 'error');
+      return;
+    }
+    const missing = editorMissing();
+    if (missing.length) {
+      toast(`还需要选择${missing.join('和')}`, 'error');
+      return;
+    }
+    const large = state.editor.large;
+    const web = state.editor.web;
+    const wallpaper = state.editor.wallpaper;
+    const item = {
+      key: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      title: els.photoTitle.value.trim() || fileNameBase(large.name),
+      note: els.photoNote.value.trim(),
+      width: large.width,
+      height: large.height,
+      files: {
+        large: copyEditorFile(large, 'large'),
+        web: copyEditorFile(web, 'web'),
+        wallpaper: copyEditorFile(wallpaper, 'wallpaper'),
+      },
+      thumbUrl: URL.createObjectURL(web.file),
+      status: 'waiting',
+      statusText: '等待发布',
+      progress: 0,
+    };
+    state.queue.push(item);
+    resetEditor({ silent: true });
+    resetPublishOutput();
+    renderQueue();
+    toast('已添加到待发布照片');
   }
 
   function photoId() {
@@ -648,6 +777,17 @@
   }
 
   /* ---------------- queue UI ---------------- */
+  function queueVersionChip(label, detail, extraClass = '') {
+    const chip = document.createElement('span');
+    chip.className = `queue-version ${extraClass}`.trim();
+    const name = document.createElement('strong');
+    name.textContent = label;
+    const value = document.createElement('small');
+    value.textContent = detail;
+    chip.append(name, value);
+    return chip;
+  }
+
   function queueItemEl(item) {
     const li = document.createElement('li');
     li.className = 'queue-item';
@@ -672,11 +812,32 @@
     title.setAttribute('aria-label', '照片标题');
     title.addEventListener('input', () => { item.title = title.value; });
     row.appendChild(title);
-    const meta = document.createElement('p');
-    meta.className = 'queue-meta';
-    meta.textContent = `${item.file.name} · ${item.width && item.height ? `${item.width} × ${item.height}` : '读取尺寸中…'} · ${formatBytes(item.file.size)}`;
-    const videoRow = document.createElement('div');
-    videoRow.className = 'queue-video';
+
+    const note = document.createElement('textarea');
+    note.className = 'queue-note';
+    note.value = item.note || '';
+    note.maxLength = 240;
+    note.rows = 2;
+    note.placeholder = '照片介绍（可选，会显示在下载弹窗里）';
+    note.setAttribute('aria-label', '照片介绍');
+    note.addEventListener('input', () => { item.note = note.value; });
+
+    const versions = document.createElement('div');
+    versions.className = 'queue-versions';
+    versions.append(
+      queueVersionChip('高清版', `${item.files.large.width} × ${item.files.large.height} · ${formatBytes(item.files.large.bytes)}`),
+      queueVersionChip('轻巧版', `${item.files.web.width} × ${item.files.web.height} · ${formatBytes(item.files.web.bytes)}`),
+    );
+    if (item.files.wallpaper) {
+      versions.append(queueVersionChip(
+        '动态壁纸',
+        [item.files.wallpaper.seconds ? `${item.files.wallpaper.seconds} 秒` : '', formatBytes(item.files.wallpaper.bytes)].filter(Boolean).join(' · '),
+        'queue-version--wallpaper',
+      ));
+    } else {
+      versions.append(queueVersionChip('动态壁纸', '未添加', 'queue-version--muted'));
+    }
+
     const status = document.createElement('p');
     status.className = 'queue-status';
     status.textContent = item.statusText || '等待发布';
@@ -684,17 +845,16 @@
     progress.className = 'queue-progress';
     const bar = document.createElement('span');
     progress.appendChild(bar);
-    main.append(row, meta, videoRow, status, progress);
+    main.append(row, note, versions, status, progress);
 
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'queue-remove';
-    remove.setAttribute('aria-label', `移除 ${item.file.name}`);
+    remove.setAttribute('aria-label', `移除 ${item.title || '这张照片'}`);
     remove.textContent = '×';
     remove.addEventListener('click', () => removeQueueItem(item.key));
 
     li.append(thumb, main, remove);
-    renderQueueVideo(item, li);
     return li;
   }
 
@@ -705,6 +865,7 @@
     els.queueCount.textContent = state.queue.length;
     refreshPublishVisibility();
     updatePublishSummary();
+    updateEditorState();
   }
 
   function updateQueueItem(item) {
@@ -717,10 +878,6 @@
     if (status) status.textContent = item.statusText || '等待发布';
     const bar = $('.queue-progress span', li);
     if (bar) bar.style.width = `${Math.round(item.progress || 0)}%`;
-    const meta = $('.queue-meta', li);
-    if (meta) {
-      meta.textContent = `${item.file.name} · ${item.width && item.height ? `${item.width} × ${item.height}` : '读取尺寸中…'} · ${formatBytes(item.file.size)}`;
-    }
     const remove = $('.queue-remove', li);
     if (remove) remove.hidden = item.status === 'processing';
   }
@@ -733,120 +890,32 @@
       els.publishButton.disabled = true;
     }
     els.publishButton.disabled = state.busy || !state.connected || !hasQueue;
+    updateEditorState();
   }
 
   function updatePublishSummary() {
     if (state.lastPublish && !state.queue.length) {
       const count = state.lastPublish.count;
-      els.publishSummary.innerHTML = `<strong>已发布 ${count} 张照片。</strong> GitHub Pages 通常会在 1 分钟内完成更新。`;
+      els.publishSummary.innerHTML = `<strong>已发布 ${count} 张照片。</strong> GitHub Pages 和 Cloudflare Pages 通常会在 1 分钟内完成更新。`;
       return;
     }
     if (!state.queue.length) {
       els.publishSummary.textContent = '还没有添加照片';
       return;
     }
-    const total = state.queue.reduce((sum, item) => sum + item.file.size, 0);
-    const videos = state.queue.filter((item) => item.video).length;
+    const total = state.queue.reduce((sum, item) => {
+      return sum + item.files.large.bytes + item.files.web.bytes + (item.files.wallpaper?.bytes || 0);
+    }, 0);
+    const wallpapers = state.queue.filter((item) => item.files.wallpaper).length;
     const group = els.groupSelect.value === '__new__'
       ? (els.newGroupName.value.trim() || '新分组')
       : (state.manifest?.groups || []).find((item) => String(item.id) === els.groupSelect.value)?.name || '分组';
-    const videoText = videos ? ` · ${videos} 个视频` : '';
-    els.publishSummary.innerHTML = `<strong>${state.queue.length} 张照片</strong>${videoText} · ${formatBytes(total)} 原始文件 · 将放入「${escapeHtml(group)}」`;
+    const videoText = wallpapers ? ` · ${wallpapers} 个动态壁纸` : '';
+    els.publishSummary.innerHTML = `<strong>${state.queue.length} 张照片</strong>${videoText} · ${formatBytes(total)} · 将放入「${escapeHtml(group)}」`;
   }
 
   function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  async function addFiles(fileList) {
-    if (!state.connected) {
-      toast('请先连接仓库', 'error');
-      return;
-    }
-    const files = [...fileList];
-    if (!files.length) return;
-    const images = files.filter(isImageFile);
-    const videos = files.filter(isVideoFile);
-    const unsupported = files.filter((file) => !isImageFile(file) && !isVideoFile(file));
-    unsupported.forEach((file) => toast(`${file.name} 不是支持的照片或视频格式，已跳过`, 'error'));
-    if (!images.length && !videos.length) return;
-    if (images.length && state.queue.length >= QUEUE_MAX) {
-      toast(`一次最多处理 ${QUEUE_MAX} 张照片`, 'error');
-      return;
-    }
-
-    state.lastPublish = null;
-    const capacity = QUEUE_MAX - state.queue.length;
-    const acceptedImages = images.slice(0, capacity);
-    if (images.length > capacity) toast(`一次最多 ${QUEUE_MAX} 张，多出的照片没有加入`, 'error');
-    let added = 0;
-    for (const file of acceptedImages) {
-      if (file.size > IMAGE_MAX) {
-        toast(`${file.name} 超过 40 MB，已跳过`, 'error');
-        continue;
-      }
-      const duplicate = state.queue.some((item) => item.file.name === file.name
-        && item.file.size === file.size
-        && item.file.lastModified === file.lastModified);
-      if (duplicate) {
-        toast(`${file.name} 已经在列表里了`);
-        continue;
-      }
-      let source;
-      try {
-        source = await decodeImage(file);
-      } catch (error) {
-        toast(`${file.name} 无法读取，可能是浏览器不支持的图片格式`, 'error');
-        continue;
-      }
-      const size = sourceSize(source);
-      if (source.close) source.close();
-      if (!size.width || !size.height) {
-        toast(`${file.name} 无法识别尺寸，已跳过`, 'error');
-        continue;
-      }
-      const item = {
-        key: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-        file,
-        title: fileNameBase(file.name),
-        width: size.width,
-        height: size.height,
-        thumbUrl: URL.createObjectURL(file),
-        video: null,
-        status: 'waiting',
-        statusText: '等待发布',
-        progress: 0,
-      };
-      state.queue.push(item);
-      added += 1;
-    }
-
-    // Pair selected videos with photos that share the same base file name.
-    let paired = 0;
-    for (const file of videos) {
-      const base = videoFileBase(file.name);
-      const target = state.queue.find((item) => videoFileBase(item.file.name) === base);
-      if (!target) {
-        toast(`视频「${file.name}」没有找到同名照片，请在该照片下单独添加`, 'error');
-        continue;
-      }
-      try {
-        await attachVideoToItem(target, file);
-        paired += 1;
-      } catch (error) {
-        toast(`视频「${file.name}」：${error.message || '无法读取'}`, 'error');
-      }
-    }
-
-    els.fileInput.value = '';
-    if (added || paired) {
-      resetPublishOutput();
-      renderQueue();
-      const parts = [];
-      if (added) parts.push(`${added} 张照片`);
-      if (paired) parts.push(`${paired} 个动态视频`);
-      toast(`${parts.join('、')}已加入，等待发布`);
-    }
   }
 
   function removeQueueItem(key) {
@@ -934,9 +1003,9 @@
     els.publishButton.classList.add('is-loading');
     els.publishButton.disabled = true;
     els.connectButton.disabled = true;
-    els.fileInput.disabled = true;
     els.refreshButton.disabled = true;
     els.clearQueue.disabled = true;
+    setEditorBusy(true);
     els.publishLog.textContent = '';
     els.progressWrap.hidden = false;
     setOverallProgress(1, '正在检查仓库的最新状态…');
@@ -969,90 +1038,81 @@
         const item = state.queue[index];
         const itemBase = (index / total) * 100;
         const itemSpan = 100 / total;
+        const id = photoId();
+        const folder = `media/${group.id}/${id}`;
+        const large = item.files.large;
+        const web = item.files.web;
+        const wallpaper = item.files.wallpaper;
+
         item.status = 'processing';
-        item.progress = 2;
-        item.statusText = '正在生成两个尺寸…';
+        item.progress = 4;
+        item.statusText = '正在上传高清版…';
         updateQueueItem(item);
-        setOverallProgress(itemBase + itemSpan * 0.05, `正在处理第 ${index + 1} / ${total} 张：${item.title}`);
-        await sleep(30);
+        setOverallProgress(itemBase + itemSpan * 0.04, `第 ${index + 1} / ${total} 张：正在上传高清版`);
 
-        let source;
-        try {
-          source = await decodeImage(item.file);
-          const id = photoId();
-          const folder = `media/${group.id}/${id}`;
+        await uploadBuffer(`${folder}/large.${large.ext}`, large.file, treeEntries);
+        item.progress = 42;
+        item.statusText = '正在上传轻巧版…';
+        updateQueueItem(item);
+        setOverallProgress(itemBase + itemSpan * 0.4, `第 ${index + 1} / ${total} 张：正在上传轻巧版`);
 
-          const large = await makeJpegVariant(source, LARGE_EDGE, 0.9);
-          item.progress = 28;
-          item.statusText = '高清版完成，正在压缩轻巧版…';
-          updateQueueItem(item);
-          const web = await makeJpegVariant(source, WEB_EDGE, 0.84);
-          item.progress = 48;
-          item.statusText = '图片准备好了，正在上传…';
-          updateQueueItem(item);
-          setOverallProgress(itemBase + itemSpan * 0.45, `第 ${index + 1} / ${total} 张：正在上传图片`);
+        await uploadBuffer(`${folder}/web.${web.ext}`, web.file, treeEntries);
+        item.progress = 74;
+        updateQueueItem(item);
 
-          await uploadBuffer(`${folder}/large.jpg`, large.blob, treeEntries);
-          item.progress = 68;
+        let videoMeta = null;
+        if (wallpaper) {
+          item.statusText = '正在上传动态壁纸…';
           updateQueueItem(item);
-          await uploadBuffer(`${folder}/web.jpg`, web.blob, treeEntries);
-          item.progress = 79;
-          updateQueueItem(item);
-
-          let videoMeta = null;
-          if (item.video) {
-            item.statusText = '正在上传你的动态视频…';
-            updateQueueItem(item);
-            const videoSrc = `${folder}/loop.${item.video.ext}`;
-            await uploadBuffer(videoSrc, item.video.file, treeEntries);
-            videoMeta = {
-              src: videoSrc,
-              poster: `${folder}/web.jpg`,
-              type: item.video.type,
-              ext: item.video.ext,
-              seconds: item.video.seconds,
-              bytes: item.video.bytes,
-              width: item.video.width,
-              height: item.video.height,
-            };
-          }
-
-          item.progress = 93;
-          item.statusText = '上传完成';
-          updateQueueItem(item);
-
-          createdPhotos.push({
-            id,
-            group: group.id,
-            title: safeTitle(item.title),
-            date: todayISO(),
-            original: { width: item.width, height: item.height },
-            variants: {
-              large: {
-                src: `${folder}/large.jpg`,
-                width: large.width,
-                height: large.height,
-                bytes: large.blob.size,
-                ext: 'jpg',
-              },
-              web: {
-                src: `${folder}/web.jpg`,
-                width: web.width,
-                height: web.height,
-                bytes: web.blob.size,
-                ext: 'jpg',
-              },
-            },
-            ...(videoMeta ? { video: videoMeta } : {}),
-          });
-          item.status = 'done';
-          item.progress = 100;
-          item.statusText = '已上传';
-          updateQueueItem(item);
-          setOverallProgress(itemBase + itemSpan * 0.96, `第 ${index + 1} / ${total} 张：完成`);
-        } finally {
-          if (source?.close) source.close();
+          setOverallProgress(itemBase + itemSpan * 0.7, `第 ${index + 1} / ${total} 张：正在上传动态壁纸`);
+          const videoSrc = `${folder}/wallpaper.${wallpaper.ext}`;
+          await uploadBuffer(videoSrc, wallpaper.file, treeEntries);
+          videoMeta = {
+            src: videoSrc,
+            poster: `${folder}/web.${web.ext}`,
+            type: wallpaper.type,
+            ext: wallpaper.ext,
+            seconds: wallpaper.seconds,
+            bytes: wallpaper.bytes,
+            width: wallpaper.width,
+            height: wallpaper.height,
+          };
         }
+
+        item.progress = 94;
+        item.statusText = '上传完成';
+        updateQueueItem(item);
+
+        createdPhotos.push({
+          id,
+          group: group.id,
+          title: safeTitle(item.title),
+          note: String(item.note || '').trim(),
+          date: todayISO(),
+          original: { width: large.width, height: large.height },
+          variants: {
+            large: {
+              src: `${folder}/large.${large.ext}`,
+              width: large.width,
+              height: large.height,
+              bytes: large.bytes,
+              ext: large.ext,
+            },
+            web: {
+              src: `${folder}/web.${web.ext}`,
+              width: web.width,
+              height: web.height,
+              bytes: web.bytes,
+              ext: web.ext,
+            },
+          },
+          ...(videoMeta ? { video: videoMeta } : {}),
+        });
+        item.status = 'done';
+        item.progress = 100;
+        item.statusText = '已上传';
+        updateQueueItem(item);
+        setOverallProgress(itemBase + itemSpan * 0.98, `第 ${index + 1} / ${total} 张：完成`);
       }
 
       setOverallProgress(96, '正在写入照片清单…');
@@ -1108,17 +1168,17 @@
       els.publishButton.classList.remove('is-loading');
       els.publishButton.disabled = true;
       els.progressWrap.hidden = false;
-      els.progressLabel.textContent = '发布完成 · GitHub Pages 通常会在 1 分钟内更新';
-      els.publishSummary.innerHTML = `<strong>已成功发布 ${successCount} 张照片。</strong> 等一下下，树屋就更新了。`;
-      logSuccess('已提交到 GitHub。若页面还没变化，请等一分钟再刷新。', [
+      els.progressLabel.textContent = '发布完成 · GitHub Pages 与 Cloudflare Pages 通常会在 1 分钟内更新';
+      els.publishSummary.innerHTML = `<strong>已成功发布 ${successCount} 张照片。</strong> 等一下下，两个站点就会更新。`;
+      logSuccess('已提交到 GitHub。GitHub Pages 和 Cloudflare Pages 都会自动更新。', [
         { href: `${siteUrl()}?v=${Date.now()}`, text: '打开网站看看 →' },
         { href: `https://github.com/${state.repo}/commit/${commit.sha}`, text: '查看这次提交' },
       ]);
-      toast('发布成功，树屋更新中…');
+      toast('发布成功，两个站点都在更新中…');
       els.connectButton.disabled = false;
-      els.fileInput.disabled = false;
       els.refreshButton.disabled = false;
       els.clearQueue.disabled = false;
+      setEditorBusy(false);
       refreshPublishVisibility();
     } catch (error) {
       const message = humanError(error);
@@ -1136,7 +1196,7 @@
       const processing = state.queue.find((item) => item.status === 'processing');
       if (processing) {
         processing.status = 'error';
-        processing.statusText = '处理或上传失败';
+        processing.statusText = '上传失败';
         updateQueueItem(processing);
       }
       els.progressLabel.textContent = '发布没有完成，请检查后重试';
@@ -1151,9 +1211,9 @@
     state.busy = false;
     els.publishButton.classList.remove('is-loading');
     els.connectButton.disabled = false;
-    els.fileInput.disabled = false;
     els.refreshButton.disabled = false;
     els.clearQueue.disabled = false;
+    setEditorBusy(false);
     refreshPublishVisibility();
   }
 
@@ -1427,31 +1487,22 @@
     els.newGroupName.addEventListener('input', updatePublishSummary);
     els.newGroupDesc.addEventListener('input', updatePublishSummary);
 
-    els.dropzone.addEventListener('click', () => els.fileInput.click());
-    els.dropzone.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        els.fileInput.click();
-      }
+    [
+      ['large', els.largeInput],
+      ['web', els.webInput],
+      ['wallpaper', els.wallpaperInput],
+    ].forEach(([kind, input]) => {
+      input.addEventListener('change', () => handleSlotFile(kind, input.files?.[0]));
     });
-    els.fileInput.addEventListener('change', () => addFiles(els.fileInput.files));
-    ['dragenter', 'dragover'].forEach((type) => {
-      els.dropzone.addEventListener(type, (event) => {
+    $$('.version-slot', els.versionSlots).forEach((slot) => {
+      slot.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
         event.preventDefault();
-        if (!state.busy) els.dropzone.classList.add('is-dragging');
+        slot.querySelector('input')?.click();
       });
     });
-    ['dragleave', 'dragend'].forEach((type) => {
-      els.dropzone.addEventListener(type, (event) => {
-        if (type === 'dragleave' && els.dropzone.contains(event.relatedTarget)) return;
-        els.dropzone.classList.remove('is-dragging');
-      });
-    });
-    els.dropzone.addEventListener('drop', (event) => {
-      event.preventDefault();
-      els.dropzone.classList.remove('is-dragging');
-      if (!state.busy) addFiles(event.dataTransfer.files);
-    });
+    els.resetEditor.addEventListener('click', () => resetEditor());
+    els.addPhotoButton.addEventListener('click', addEditorPhoto);
 
     els.clearQueue.addEventListener('click', () => clearQueue());
     els.publishButton.addEventListener('click', publish);
@@ -1481,6 +1532,10 @@
         return '';
       }
       state.queue.forEach((item) => URL.revokeObjectURL(item.thumbUrl));
+      ['large', 'web', 'wallpaper'].forEach((kind) => {
+        const previewUrl = state.editor[kind]?.previewUrl;
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+      });
       return undefined;
     });
   }

@@ -35,10 +35,10 @@
       <div class="admin-hero__copy">
         <p class="admin-eyebrow"><span></span> THE KEEPER'S DESK</p>
         <h1>把新的光，<br>放进<span class="admin-script">树屋</span>。</h1>
-        <p class="admin-lede">选好照片，取一个分组名，剩下的交给这里。<br>会自动压缩两个尺寸；动态视频由你上传。</p>
+        <p class="admin-lede">高清版、轻巧版和动态壁纸都由你上传。<br>在这里整理标题、介绍和分组。</p>
         <div class="admin-hero__chips">
-          <span>自动识别分辨率</span>
-          <span>自动压缩</span>
+          <span>三个版本</span>
+          <span>自写介绍</span>
           <span>一键发布</span>
         </div>
       </div>
@@ -48,7 +48,7 @@
           <p class="admin-note-card__label">HOW IT WORKS</p>
           <ol>
             <li><span>01</span><div><strong>连接仓库</strong><small>照片会住进你的 GitHub 仓库</small></div></li>
-            <li><span>02</span><div><strong>放入照片</strong><small>两个尺寸 + 循环视频自动完成</small></div></li>
+            <li><span>02</span><div><strong>放入照片</strong><small>高清、轻巧、动态壁纸都可以自己选</small></div></li>
             <li><span>03</span><div><strong>推开门</strong><small>发布后网站会自动更新</small></div></li>
           </ol>
           <p class="admin-note-card__foot">无需服务器 · 无需一直开着电脑</p>
@@ -126,7 +126,7 @@
         <span class="admin-panel__num">02</span>
         <div>
           <h2 id="uploadTitle">把照片放进树屋</h2>
-          <p>支持 JPG / PNG / WebP，可同时选择自己的 MP4 / WebM 视频。</p>
+          <p>分别选择高清图片、轻巧图片和动态壁纸视频；图片不会被自动压缩。</p>
         </div>
         <span class="panel-state" id="uploadState">连接后可用</span>
       </div>
@@ -158,17 +158,75 @@
           </div>
         </div>
 
-        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-controls="fileInput" aria-label="选择或拖入照片和视频">
-          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple hidden>
-          <div class="dropzone__art" aria-hidden="true">
-            <span class="dropzone__sun"></span>
-            <span class="dropzone__hill"></span>
-            <span class="dropzone__house"><i></i></span>
-            <span class="dropzone__plus">＋</span>
+        <div class="version-editor" id="versionEditor">
+          <div class="version-editor__head">
+            <div>
+              <span class="mini-label">THREE VERSIONS</span>
+              <h3>上传一张照片</h3>
+              <p>高清版和轻巧版会作为两个下载版本，动态壁纸会作为循环预览和视频下载。</p>
+            </div>
+            <button type="button" class="text-button" id="resetEditor">清空</button>
           </div>
-          <p class="dropzone__title">把照片拖到这里</p>
-          <p class="dropzone__hint">或者 <span>点击选择文件</span> · 建议每次 1–20 张</p>
-          <p class="dropzone__note">可以同时选择同名视频自动配对，也可以在下方为每张照片单独添加</p>
+
+          <div class="version-slots" id="versionSlots">
+            <label class="version-slot" data-slot="large" tabindex="0" role="button" aria-label="选择高清版图片">
+              <input id="largeInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+              <span class="version-slot__top"><span class="version-slot__no">01</span><span class="version-slot__req">必填</span></span>
+              <span class="version-slot__body">
+                <span class="version-slot__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="1.6" fill="currentColor"/><path d="M4.5 17l5-5 4 4 2-2 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="version-slot__title">高清版</span>
+                <span class="version-slot__hint">点击选择图片</span>
+              </span>
+              <span class="version-slot__preview" hidden><img id="largePreview" alt=""></span>
+              <span class="version-slot__file" id="largeFile" hidden></span>
+            </label>
+
+            <label class="version-slot" data-slot="web" tabindex="0" role="button" aria-label="选择轻巧版图片">
+              <input id="webInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+              <span class="version-slot__top"><span class="version-slot__no">02</span><span class="version-slot__req">必填</span></span>
+              <span class="version-slot__body">
+                <span class="version-slot__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="1.6" fill="currentColor"/><path d="M4.5 17l5-5 4 4 2-2 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="version-slot__title">轻巧版</span>
+                <span class="version-slot__hint">点击选择图片</span>
+              </span>
+              <span class="version-slot__preview" hidden><img id="webPreview" alt=""></span>
+              <span class="version-slot__file" id="webFile" hidden></span>
+            </label>
+
+            <label class="version-slot" data-slot="wallpaper" tabindex="0" role="button" aria-label="选择动态壁纸视频">
+              <input id="wallpaperInput" type="file" accept="video/mp4,video/webm" hidden>
+              <span class="version-slot__top"><span class="version-slot__no">03</span><span class="version-slot__req">可选</span></span>
+              <span class="version-slot__body">
+                <span class="version-slot__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M9.5 8.5v7l6-3.5-6-3.5z" fill="currentColor"/></svg>
+                </span>
+                <span class="version-slot__title">动态壁纸</span>
+                <span class="version-slot__hint">点击选择视频</span>
+              </span>
+              <span class="version-slot__preview" hidden><video id="wallpaperPreview" muted loop playsinline preload="metadata"></video></span>
+              <span class="version-slot__file" id="wallpaperFile" hidden></span>
+            </label>
+          </div>
+
+          <div class="photo-fields">
+            <div class="field">
+              <label for="photoTitle">照片标题</label>
+              <input id="photoTitle" type="text" maxlength="80" placeholder="例如：夏日散步">
+            </div>
+            <div class="field field--note">
+              <label for="photoNote">照片介绍 <span>可选，会显示在下载弹窗里</span></label>
+              <textarea id="photoNote" rows="3" maxlength="240" placeholder="写一句这张照片的故事…"></textarea>
+            </div>
+          </div>
+
+          <div class="version-editor__actions">
+            <p class="editor-hint" id="editorHint">还需要选择高清版和轻巧版。</p>
+            <button type="button" class="primary-button" id="addPhotoButton" disabled>添加到待发布</button>
+          </div>
         </div>
 
         <div class="queue" id="queueWrap" hidden>
@@ -182,10 +240,10 @@
         <div class="publish-settings" id="publishSettings" hidden>
           <div class="setting-row">
             <div class="setting-copy">
-              <strong>动态背景视频由你自己上传</strong>
-              <span>为照片附加自己的 MP4 / WebM，它会作为循环预览和视频下载。网站不会自动生成或重编码视频；建议单个视频小于 60 MB。</span>
+              <strong>三个版本都由你上传</strong>
+              <span>高清版、轻巧版和动态壁纸会原样上传，不压缩、不转码。高清图和视频建议分别控制在 80 MB 和 60 MB 内。</span>
             </div>
-            <span class="video-self-badge">SELF-HOSTED</span>
+            <span class="video-self-badge">YOUR FILES</span>
           </div>
           <div class="setting-row setting-row--summary">
             <div class="publish-summary" id="publishSummary">还没有添加照片</div>
