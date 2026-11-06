@@ -268,7 +268,7 @@
         <span class="admin-panel__num">03</span>
         <div>
           <h2 id="manageTitle">树屋里的照片</h2>
-          <p>查看现有分组，或把不再展示的照片取下来。</p>
+          <p>点击照片可以再次编辑，或把不再展示的照片取下来。</p>
         </div>
         <span class="panel-state" id="manageState">待连接</span>
         <button type="button" class="ghost-button" id="refreshButton" disabled>刷新 <span aria-hidden="true">↻</span></button>
@@ -309,6 +309,78 @@
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="edit-dialog" id="editDialog" aria-labelledby="editTitle">
+    <div class="edit-dialog__inner">
+      <header class="edit-dialog__head">
+        <div>
+          <span class="mini-label">EDIT PHOTO</span>
+          <h2 id="editTitle">编辑这张照片</h2>
+          <p>可以修改标题、介绍和分组，也可以替换三个版本的文件。</p>
+        </div>
+        <button type="button" class="edit-dialog__close" id="editClose" aria-label="关闭编辑窗口">×</button>
+      </header>
+
+      <div class="edit-dialog__body">
+        <div class="edit-fields">
+          <div class="field">
+            <label for="editPhotoTitle">照片标题</label>
+            <input id="editPhotoTitle" type="text" maxlength="80" placeholder="照片标题">
+          </div>
+          <div class="field">
+            <label for="editGroupSelect">照片分组</label>
+            <select id="editGroupSelect"></select>
+          </div>
+          <div class="field field--note">
+            <label for="editPhotoNote">照片介绍 <span>可选，会显示在前台下载弹窗里</span></label>
+            <textarea id="editPhotoNote" rows="3" maxlength="240" placeholder="写一句这张照片的故事…"></textarea>
+          </div>
+        </div>
+
+        <div class="edit-slots">
+          <div class="edit-slot" data-edit-slot="large">
+            <div class="edit-slot__head"><strong>高清版</strong><span id="editLargeState">当前版本</span></div>
+            <div class="edit-slot__media"><img id="editLargePreview" alt=""></div>
+            <p class="edit-slot__meta" id="editLargeMeta">—</p>
+            <label class="edit-slot__pick">更换图片
+              <input id="editLargeInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+            </label>
+          </div>
+
+          <div class="edit-slot" data-edit-slot="web">
+            <div class="edit-slot__head"><strong>轻巧版</strong><span id="editWebState">当前版本</span></div>
+            <div class="edit-slot__media"><img id="editWebPreview" alt=""></div>
+            <p class="edit-slot__meta" id="editWebMeta">—</p>
+            <label class="edit-slot__pick">更换图片
+              <input id="editWebInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+            </label>
+          </div>
+
+          <div class="edit-slot" data-edit-slot="wallpaper">
+            <div class="edit-slot__head"><strong>动态壁纸</strong><span id="editWallpaperState">当前版本</span></div>
+            <div class="edit-slot__media edit-slot__media--video">
+              <video id="editWallpaperPreview" muted playsinline preload="metadata"></video>
+              <span class="edit-slot__empty" id="editWallpaperEmpty">暂无动态壁纸</span>
+            </div>
+            <p class="edit-slot__meta" id="editWallpaperMeta">—</p>
+            <div class="edit-slot__video-actions">
+              <label class="edit-slot__pick" id="editWallpaperPick">选择视频
+                <input id="editWallpaperInput" type="file" accept="video/mp4,video/webm" hidden>
+              </label>
+              <button type="button" class="edit-slot__remove" id="editWallpaperRemove" hidden>移除</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="edit-status" id="editStatus" role="status" aria-live="polite"></p>
+      </div>
+
+      <footer class="edit-dialog__actions">
+        <button type="button" class="ghost-button" id="editCancel">取消</button>
+        <button type="button" class="primary-button" id="editSave">保存修改</button>
+      </footer>
+    </div>
+  </dialog>
 
   <dialog class="confirm-dialog" id="confirmDialog" aria-labelledby="confirmTitle">
     <div class="confirm-dialog__icon" aria-hidden="true">?</div>

@@ -80,6 +80,28 @@
     removeDemoButton: $('#removeDemoButton'),
     refreshButton: $('#refreshButton'),
     toast: $('#toast'),
+    editDialog: $('#editDialog'),
+    editClose: $('#editClose'),
+    editCancel: $('#editCancel'),
+    editSave: $('#editSave'),
+    editStatus: $('#editStatus'),
+    editPhotoTitle: $('#editPhotoTitle'),
+    editPhotoNote: $('#editPhotoNote'),
+    editGroupSelect: $('#editGroupSelect'),
+    editLargeInput: $('#editLargeInput'),
+    editLargePreview: $('#editLargePreview'),
+    editLargeMeta: $('#editLargeMeta'),
+    editLargeState: $('#editLargeState'),
+    editWebInput: $('#editWebInput'),
+    editWebPreview: $('#editWebPreview'),
+    editWebMeta: $('#editWebMeta'),
+    editWebState: $('#editWebState'),
+    editWallpaperInput: $('#editWallpaperInput'),
+    editWallpaperPreview: $('#editWallpaperPreview'),
+    editWallpaperMeta: $('#editWallpaperMeta'),
+    editWallpaperState: $('#editWallpaperState'),
+    editWallpaperEmpty: $('#editWallpaperEmpty'),
+    editWallpaperRemove: $('#editWallpaperRemove'),
     confirmDialog: $('#confirmDialog'),
     confirmTitle: $('#confirmTitle'),
     confirmText: $('#confirmText'),
@@ -102,6 +124,8 @@
       web: null,
       wallpaper: null,
     },
+    edit: null,
+    editSaving: false,
     busy: false,
     lastPublish: null,
     autoConnecting: false,
@@ -1447,8 +1471,11 @@
       groupPhotos.forEach((photo) => {
         const figure = document.createElement('figure');
         figure.className = 'manage-photo';
+        figure.tabIndex = 0;
+        figure.setAttribute('role', 'button');
+        figure.setAttribute('aria-label', `编辑照片：${photo.title || '未命名'}`);
         const img = document.createElement('img');
-        img.src = photo.variants?.web?.src || '';
+        img.src = photo.preview?.src || photo.variants?.web?.src || '';
         img.alt = photo.title || '照片';
         img.loading = 'lazy';
         const bar = document.createElement('div');
@@ -1463,6 +1490,16 @@
         remove.textContent = '×';
         bar.append(name, remove);
         figure.append(img, bar);
+        figure.addEventListener('click', (event) => {
+          if (event.target.closest('[data-delete-photo]')) return;
+          openEditDialog(photo.id);
+        });
+        figure.addEventListener('keydown', (event) => {
+          if (event.target !== figure) return;
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          openEditDialog(photo.id);
+        });
         photoWrap.appendChild(figure);
       });
       section.append(head, photoWrap);
@@ -1482,8 +1519,11 @@
       orphaned.forEach((photo) => {
         const figure = document.createElement('figure');
         figure.className = 'manage-photo';
+        figure.tabIndex = 0;
+        figure.setAttribute('role', 'button');
+        figure.setAttribute('aria-label', `编辑照片：${photo.title || '未命名'}`);
         const img = document.createElement('img');
-        img.src = photo.variants?.web?.src || '';
+        img.src = photo.preview?.src || photo.variants?.web?.src || '';
         img.alt = photo.title || '照片';
         img.loading = 'lazy';
         const bar = document.createElement('div');
@@ -1497,10 +1537,423 @@
         remove.setAttribute('aria-label', `从网站移除 ${photo.title || '这张照片'}`);
         bar.append(name, remove);
         figure.append(img, bar);
+        figure.addEventListener('click', (event) => {
+          if (event.target.closest('[data-delete-photo]')) return;
+          openEditDialog(photo.id);
+        });
+        figure.addEventListener('keydown', (event) => {
+          if (event.target !== figure) return;
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          openEditDialog(photo.id);
+        });
         wrap.appendChild(figure);
       });
       section.append(head, wrap);
       els.manageGroups.appendChild(section);
+    }
+  }
+
+  /* ---------------- edit an existing photo ---------------- */
+  function editFilePreviewUrl(data) {
+    return data?.previewUrl || null;
+  }
+
+  function revokeEditObjectUrls() {
+    if (!state.edit) return;
+    Object.values(state.edit.files || {}).forEach((data) => {
+      if (data?.previewUrl) URL.revokeObjectURL(data.previewUrl);
+    });
+  }
+
+  function setEditStatus(text, type = '') {
+    els.editStatus.textContent = text;
+    els.editStatus.dataset.type = type;
+  }
+
+  function editPhoto() {
+    const id = state.edit?.photoId;
+    return (state.manifest?.photos || []).find((photo) => String(photo.id) === String(id)) || null;
+  }
+
+  function editSlotData(kind) {
+    return state.edit?.files?.[kind] || null;
+  }
+
+  function renderEditSlots() {
+    const photo = editPhoto();
+    if (!photo || !state.edit) return;
+    const large = photo.variants?.large || {};
+    const web = photo.variants?.web || {};
+    const replacements = state.edit.files;
+
+    const largeSrc = replacements.large?.previewUrl
+      || photo.preview?.src
+      || large.src
+      || web.src || '';
+    if (els.editLargePreview) els.editLargePreview.src = largeSrc;
+    if (els.editLargeMeta) {
+      const data = replacements.large || large;
+      els.editLargeMeta.textContent = data.width && data.height
+        ? `${data.width} × ${data.height}${data.bytes ? ` · ${formatBytes(data.bytes)}` : ''}`
+        : '尚未设置';
+    }
+    if (els.editLargeState) els.editLargeState.textContent = replacements.large ? '待替换' : '当前版本';
+    $('[data-edit-slot="large"]', els.editDialog)?.classList.toggle('is-replaced', Boolean(replacements.large));
+
+    const webSrc = replacements.web?.previewUrl || web.src || '';
+    if (els.editWebPreview) els.editWebPreview.src = webSrc;
+    if (els.editWebMeta) {
+      const data = replacements.web || web;
+      els.editWebMeta.textContent = data.width && data.height
+        ? `${data.width} × ${data.height}${data.bytes ? ` · ${formatBytes(data.bytes)}` : ''}`
+        : '尚未设置';
+    }
+    if (els.editWebState) els.editWebState.textContent = replacements.web ? '待替换' : '当前版本';
+    $('[data-edit-slot="web"]', els.editDialog)?.classList.toggle('is-replaced', Boolean(replacements.web));
+
+    const currentVideo = photo.video || null;
+    const replacementVideo = replacements.wallpaper;
+    const removed = state.edit.removeVideo;
+    if (els.editWallpaperPreview) {
+      els.editWallpaperPreview.pause();
+      if (replacementVideo?.previewUrl) {
+        els.editWallpaperPreview.src = replacementVideo.previewUrl;
+        els.editWallpaperPreview.load();
+        els.editWallpaperEmpty.hidden = true;
+      } else {
+        els.editWallpaperPreview.removeAttribute('src');
+        els.editWallpaperPreview.load();
+        if (currentVideo?.poster && !removed) {
+          els.editWallpaperPreview.poster = photo.preview?.src || currentVideo.poster;
+        } else {
+          els.editWallpaperPreview.removeAttribute('poster');
+        }
+        els.editWallpaperEmpty.hidden = Boolean(currentVideo && !removed);
+      }
+    }
+    if (els.editWallpaperMeta) {
+      if (replacementVideo) {
+        els.editWallpaperMeta.textContent = [
+          replacementVideo.width && replacementVideo.height ? `${replacementVideo.width} × ${replacementVideo.height}` : '',
+          replacementVideo.seconds ? `${replacementVideo.seconds} 秒` : '',
+          replacementVideo.bytes ? formatBytes(replacementVideo.bytes) : '',
+        ].filter(Boolean).join(' · ');
+      } else if (removed || !currentVideo) {
+        els.editWallpaperMeta.textContent = '未设置动态壁纸';
+      } else {
+        els.editWallpaperMeta.textContent = [
+          currentVideo.width && currentVideo.height ? `${currentVideo.width} × ${currentVideo.height}` : '',
+          currentVideo.seconds ? `${currentVideo.seconds} 秒` : '',
+          currentVideo.bytes ? formatBytes(currentVideo.bytes) : '',
+        ].filter(Boolean).join(' · ');
+      }
+    }
+    if (els.editWallpaperState) {
+      els.editWallpaperState.textContent = replacementVideo ? '待替换' : removed ? '已移除' : currentVideo ? '当前版本' : '暂无';
+    }
+    $('[data-edit-slot="wallpaper"]', els.editDialog)?.classList.toggle('is-replaced', Boolean(replacementVideo));
+    if (els.editWallpaperRemove) {
+      els.editWallpaperRemove.hidden = !currentVideo && !replacementVideo;
+      els.editWallpaperRemove.textContent = replacementVideo ? '取消替换' : removed ? '撤销移除' : '移除';
+    }
+    if ($('#editWallpaperPick')) {
+      $('#editWallpaperPick').firstChild.textContent = currentVideo || replacementVideo ? '更换视频 ' : '选择视频 ';
+    }
+  }
+
+  function populateEditGroups(photo) {
+    els.editGroupSelect.textContent = '';
+    const groups = state.manifest?.groups || [];
+    groups.forEach((group) => {
+      const option = document.createElement('option');
+      option.value = group.id;
+      option.textContent = group.name || '未命名分组';
+      els.editGroupSelect.appendChild(option);
+    });
+    if (!groups.some((group) => String(group.id) === String(photo.group))) {
+      const option = document.createElement('option');
+      option.value = photo.group;
+      option.textContent = '原分组（未找到）';
+      els.editGroupSelect.appendChild(option);
+    }
+    els.editGroupSelect.value = photo.group;
+  }
+
+  function openEditDialog(photoId) {
+    if (!state.connected || state.editSaving) return;
+    const photo = (state.manifest?.photos || []).find((item) => String(item.id) === String(photoId));
+    if (!photo) {
+      toast('找不到这张照片，请刷新后再试。', 'error');
+      return;
+    }
+    if (state.edit) revokeEditObjectUrls();
+    state.edit = {
+      photoId: String(photo.id),
+      files: { large: null, web: null, wallpaper: null },
+      removeVideo: false,
+    };
+    els.editPhotoTitle.value = photo.title || '';
+    els.editPhotoNote.value = photo.note || '';
+    populateEditGroups(photo);
+    [els.editLargeInput, els.editWebInput, els.editWallpaperInput].forEach((input) => {
+      if (input) input.value = '';
+    });
+    setEditStatus('修改会直接更新这张照片，不会新建一张。');
+    renderEditSlots();
+    if (!els.editDialog.open) els.editDialog.showModal();
+  }
+
+  function closeEditDialog() {
+    if (state.editSaving) return;
+    revokeEditObjectUrls();
+    state.edit = null;
+    if (els.editDialog.open) els.editDialog.close();
+  }
+
+  async function readEditImage(kind, file) {
+    if (!file || !state.edit) return;
+    if (!isImageFile(file)) throw new Error('请选择 JPG / PNG / WebP / AVIF 图片。');
+    const ext = imageExtension(file);
+    if (!ext) throw new Error('图片格式请使用 JPG / PNG / WebP / AVIF。');
+    if (file.size > IMAGE_MAX) throw new Error(`图片超过 ${Math.round(IMAGE_MAX / 1024 / 1024)} MB。`);
+    const source = await decodeImage(file);
+    const size = sourceSize(source);
+    if (source.close) source.close();
+    if (!size.width || !size.height) throw new Error('无法读取这张图片的尺寸。');
+    const previous = state.edit.files[kind];
+    if (previous?.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+    state.edit.files[kind] = {
+      file,
+      name: file.name,
+      ext,
+      type: file.type,
+      width: size.width,
+      height: size.height,
+      bytes: file.size,
+      previewUrl: URL.createObjectURL(file),
+    };
+    renderEditSlots();
+    setEditStatus(`${kind === 'large' ? '高清版' : '轻巧版'}已选择新文件，保存后替换。`);
+  }
+
+  async function readEditVideo(file) {
+    if (!file || !state.edit) return;
+    if (!isVideoFile(file)) throw new Error('动态壁纸请选择 MP4 / WebM 视频。');
+    const meta = await readVideoMetadata(file);
+    const previous = state.edit.files.wallpaper;
+    if (previous?.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+    state.edit.files.wallpaper = { ...meta, previewUrl: URL.createObjectURL(file) };
+    state.edit.removeVideo = false;
+    renderEditSlots();
+    setEditStatus('已选择新的动态壁纸，保存后会重新生成 720P 预览。');
+  }
+
+  function removeEditVideo() {
+    if (!state.edit) return;
+    const replacement = state.edit.files.wallpaper;
+    if (replacement?.previewUrl) URL.revokeObjectURL(replacement.previewUrl);
+    state.edit.files.wallpaper = null;
+    if (state.edit.removeVideo) {
+      state.edit.removeVideo = false;
+      setEditStatus('已取消移除动态壁纸。');
+    } else if (editPhoto()?.video) {
+      state.edit.removeVideo = true;
+      setEditStatus('动态壁纸会在保存后移除。', 'error');
+    }
+    renderEditSlots();
+  }
+
+  function uniqueEditPath(folder, base, ext, stamp) {
+    return `${folder}/${base}-${stamp}.${ext}`;
+  }
+
+  async function saveEditPhoto() {
+    if (!state.edit || !state.edit.photoId || state.editSaving) return;
+    if (!state.connected) {
+      toast('请先连接仓库', 'error');
+      return;
+    }
+    state.editSaving = true;
+    els.editSave.disabled = true;
+    els.editCancel.disabled = true;
+    els.editClose.disabled = true;
+    setEditStatus('正在读取仓库最新状态…');
+    try {
+      await fetchRepositoryState();
+      const photo = editPhoto();
+      if (!photo) throw new Error('这张照片已经不存在了，请刷新后再试。');
+      const folderSource = photo.variants?.large?.src || photo.variants?.web?.src || '';
+      const folder = folderSource.split('/').slice(0, -1).join('/');
+      if (!folder) throw new Error('无法确定这张照片的存储位置。');
+      const updatedPhoto = JSON.parse(JSON.stringify(photo));
+      const treeEntries = [];
+      const deletePaths = new Set();
+      const stamp = Date.now().toString(36);
+      updatedPhoto.title = safeTitle(els.editPhotoTitle.value.trim() || photo.title);
+      updatedPhoto.note = els.editPhotoNote.value.trim();
+      const nextGroup = els.editGroupSelect.value;
+      if ((state.manifest.groups || []).some((group) => String(group.id) === String(nextGroup))) {
+        updatedPhoto.group = nextGroup;
+      }
+
+      const largeReplacement = state.edit.files.large;
+      const webReplacement = state.edit.files.web;
+      const wallpaperReplacement = state.edit.files.wallpaper;
+
+      if (largeReplacement) {
+        setEditStatus('正在上传新的高清版…');
+        const src = uniqueEditPath(folder, 'large', largeReplacement.ext, stamp);
+        await uploadBuffer(src, largeReplacement.file, treeEntries);
+        if (photo.variants?.large?.src) deletePaths.add(photo.variants.large.src);
+        updatedPhoto.variants = updatedPhoto.variants || {};
+        updatedPhoto.variants.large = {
+          src,
+          width: largeReplacement.width,
+          height: largeReplacement.height,
+          bytes: largeReplacement.bytes,
+          ext: largeReplacement.ext,
+        };
+        updatedPhoto.original = { width: largeReplacement.width, height: largeReplacement.height };
+        setEditStatus('正在生成新的 720P 预览图…');
+        try {
+          const source = await decodeImage(largeReplacement.file);
+          try {
+            const preview = await makePreviewImage(source);
+            const previewSrc = uniqueEditPath(folder, 'preview', 'jpg', stamp);
+            await uploadBuffer(previewSrc, preview.blob, treeEntries);
+            if (photo.preview?.src) deletePaths.add(photo.preview.src);
+            updatedPhoto.preview = {
+              src: previewSrc,
+              width: preview.width,
+              height: preview.height,
+              bytes: preview.blob.size,
+              ext: 'jpg',
+            };
+          } finally {
+            if (source.close) source.close();
+          }
+        } catch (_) {
+          if (photo.preview?.src) deletePaths.add(photo.preview.src);
+          delete updatedPhoto.preview;
+        }
+      }
+
+      if (webReplacement) {
+        setEditStatus('正在上传新的轻巧版…');
+        const src = uniqueEditPath(folder, 'web', webReplacement.ext, stamp);
+        await uploadBuffer(src, webReplacement.file, treeEntries);
+        const oldWeb = photo.variants?.web?.src;
+        if (oldWeb) deletePaths.add(oldWeb);
+        updatedPhoto.variants = updatedPhoto.variants || {};
+        updatedPhoto.variants.web = {
+          src,
+          width: webReplacement.width,
+          height: webReplacement.height,
+          bytes: webReplacement.bytes,
+          ext: webReplacement.ext,
+        };
+        if (updatedPhoto.video && (!updatedPhoto.video.poster || updatedPhoto.video.poster === oldWeb)) {
+          updatedPhoto.video.poster = src;
+        }
+      }
+
+      if (state.edit.removeVideo) {
+        if (photo.video?.src) deletePaths.add(photo.video.src);
+        if (photo.video?.preview?.src) deletePaths.add(photo.video.preview.src);
+        delete updatedPhoto.video;
+      } else if (wallpaperReplacement) {
+        setEditStatus('正在上传新的动态壁纸…');
+        const src = uniqueEditPath(folder, 'wallpaper', wallpaperReplacement.ext, stamp);
+        await uploadBuffer(src, wallpaperReplacement.file, treeEntries);
+        if (photo.video?.src) deletePaths.add(photo.video.src);
+        if (photo.video?.preview?.src) deletePaths.add(photo.video.preview.src);
+        let videoPreview = null;
+        if (Math.max(wallpaperReplacement.width || 0, wallpaperReplacement.height || 0) > PREVIEW_EDGE) {
+          setEditStatus('正在生成新的 720P 动态预览…');
+          try {
+            const generated = await makeVideoPreview(wallpaperReplacement.file, wallpaperReplacement);
+            if (generated) {
+              const previewSrc = uniqueEditPath(folder, 'video-preview', 'webm', stamp);
+              await uploadBuffer(previewSrc, generated.blob, treeEntries);
+              videoPreview = {
+                src: previewSrc,
+                width: generated.width,
+                height: generated.height,
+                seconds: generated.seconds,
+                bytes: generated.blob.size,
+                type: 'video/webm',
+                ext: 'webm',
+              };
+            }
+          } catch (_) {
+            videoPreview = null;
+          }
+        }
+        updatedPhoto.video = {
+          src,
+          poster: updatedPhoto.variants?.web?.src || photo.video?.poster || '',
+          type: wallpaperReplacement.type,
+          ext: wallpaperReplacement.ext,
+          seconds: wallpaperReplacement.seconds,
+          bytes: wallpaperReplacement.bytes,
+          width: wallpaperReplacement.width,
+          height: wallpaperReplacement.height,
+          ...(videoPreview ? { preview: videoPreview } : {}),
+        };
+      }
+
+      setEditStatus('正在写入照片清单…');
+      const manifest = JSON.parse(JSON.stringify(state.manifest));
+      const index = manifest.photos.findIndex((item) => String(item.id) === String(state.edit.photoId));
+      if (index < 0) throw new Error('照片清单已变化，请刷新后再试。');
+      manifest.photos[index] = updatedPhoto;
+      manifest.updatedAt = todayISO();
+      const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      await uploadBuffer('data/gallery.json', manifestBlob, treeEntries);
+
+      const newPaths = new Set(treeEntries.map((entry) => entry.path));
+      [...deletePaths].forEach((path) => {
+        if (!newPaths.has(path)) treeEntries.push({ path, mode: '100644', type: 'blob', sha: null });
+      });
+
+      setEditStatus('正在创建提交…');
+      const tree = await api(`${repoApiPath()}/git/trees`, {
+        method: 'POST',
+        body: { base_tree: state.treeSha, tree: treeEntries },
+      });
+      const commit = await api(`${repoApiPath()}/git/commits`, {
+        method: 'POST',
+        body: {
+          message: `Edit photo · ${updatedPhoto.title || 'Untitled'} · Tree Book House`,
+          tree: tree.sha,
+          parents: [state.headSha],
+        },
+      });
+      await api(`${repoApiPath()}/git/refs/heads/${branchPath()}`, {
+        method: 'PATCH',
+        body: { sha: commit.sha, force: false },
+      });
+
+      state.headSha = commit.sha;
+      state.treeSha = tree.sha;
+      state.manifest = manifest;
+      state.editSaving = false;
+      revokeEditObjectUrls();
+      state.edit = null;
+      if (els.editDialog.open) els.editDialog.close();
+      renderGroupOptions();
+      renderManage();
+      toast('照片已更新，两个站点都在重新生成中');
+    } catch (error) {
+      const message = humanError(error);
+      setEditStatus(message, 'error');
+      toast(message, 'error');
+    } finally {
+      state.editSaving = false;
+      els.editSave.disabled = false;
+      els.editCancel.disabled = false;
+      els.editClose.disabled = false;
     }
   }
 
@@ -1717,6 +2170,47 @@
       );
     });
 
+    els.editClose.addEventListener('click', closeEditDialog);
+    els.editCancel.addEventListener('click', closeEditDialog);
+    els.editSave.addEventListener('click', saveEditPhoto);
+    els.editDialog.addEventListener('cancel', (event) => {
+      if (state.editSaving) {
+        event.preventDefault();
+        return;
+      }
+      revokeEditObjectUrls();
+      state.edit = null;
+    });
+    els.editDialog.addEventListener('click', (event) => {
+      if (event.target === els.editDialog) closeEditDialog();
+    });
+    [
+      ['large', els.editLargeInput, readEditImage],
+      ['web', els.editWebInput, readEditImage],
+    ].forEach(([kind, input, handler]) => {
+      input.addEventListener('change', async () => {
+        try {
+          await handler(kind, input.files?.[0]);
+        } catch (error) {
+          setEditStatus(error.message || '图片读取失败', 'error');
+          toast(error.message || '图片读取失败', 'error');
+        } finally {
+          input.value = '';
+        }
+      });
+    });
+    els.editWallpaperInput.addEventListener('change', async () => {
+      try {
+        await readEditVideo(els.editWallpaperInput.files?.[0]);
+      } catch (error) {
+        setEditStatus(error.message || '视频读取失败', 'error');
+        toast(error.message || '视频读取失败', 'error');
+      } finally {
+        els.editWallpaperInput.value = '';
+      }
+    });
+    els.editWallpaperRemove.addEventListener('click', removeEditVideo);
+
     window.addEventListener('beforeunload', (event) => {
       if (state.busy) {
         event.preventDefault();
@@ -1728,6 +2222,11 @@
         const previewUrl = state.editor[kind]?.previewUrl;
         if (previewUrl) URL.revokeObjectURL(previewUrl);
       });
+      if (state.edit) {
+        Object.values(state.edit.files || {}).forEach((data) => {
+          if (data?.previewUrl) URL.revokeObjectURL(data.previewUrl);
+        });
+      }
       return undefined;
     });
   }
