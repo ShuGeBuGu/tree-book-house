@@ -245,20 +245,20 @@
     button.dataset.openPhoto = photo.id;
     button.setAttribute('aria-label', `查看照片：${photo.title || '未命名'}，可下载`);
 
-    const web = photo.variants?.web || photo.variants?.large;
+    const preview = photo.preview || photo.variants?.web || photo.variants?.large;
     const frame = document.createElement('div');
     frame.className = 'photo-card__frame';
 
     const img = document.createElement('img');
     img.className = 'photo-card__image';
-    img.src = web?.src || '';
+    img.src = preview?.src || '';
     img.alt = photo.title ? `照片：${photo.title}` : '树屋照片';
     img.loading = 'lazy';
     img.decoding = 'async';
-    if (web?.width && web?.height) {
-      frame.style.aspectRatio = `${web.width} / ${web.height}`;
-      img.width = web.width;
-      img.height = web.height;
+    if (preview?.width && preview?.height) {
+      frame.style.aspectRatio = `${preview.width} / ${preview.height}`;
+      img.width = preview.width;
+      img.height = preview.height;
     }
     img.addEventListener('error', () => {
       img.style.opacity = '.25';
@@ -274,7 +274,7 @@
       video.playsInline = true;
       video.preload = 'none';
       video.dataset.src = photo.video.preview?.src || photo.video.src;
-      if (photo.video.poster) video.poster = photo.video.poster;
+      if (photo.video.poster) video.poster = photo.preview?.src || photo.video.poster;
       video.setAttribute('aria-hidden', 'true');
       video.addEventListener('playing', () => video.classList.add('is-playing'));
       frame.appendChild(video);
@@ -309,11 +309,7 @@
     const meta = document.createElement('p');
     setText(meta, `${group.name || '照片'} · ${formatDate(photo.date)}`);
     text.append(h3, meta);
-    const heart = document.createElement('span');
-    heart.className = 'photo-card__heart';
-    heart.setAttribute('aria-hidden', 'true');
-    heart.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M20.8 5.9a5.2 5.2 0 00-7.4 0L12 7.4l-1.4-1.5a5.2 5.2 0 10-7.4 7.4L12 22l8.8-8.7a5.2 5.2 0 000-7.4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-    caption.append(number, text, heart);
+    caption.append(number, text);
 
     button.append(frame, caption);
     button.addEventListener('click', () => openLightbox(photo.id, button));
