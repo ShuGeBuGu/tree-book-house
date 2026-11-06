@@ -359,9 +359,11 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   background: #f5dfc5;
   box-shadow: 0 3px 0 rgba(121, 90, 76, .12);
   perspective: 160px;
+  isolation: isolate;
 }
 .mini-door__panel {
   position: absolute; top: 0; bottom: 0; width: 51%;
+  z-index: 1;
   background:
     linear-gradient(90deg, transparent 46%, rgba(121, 90, 76, .18) 47% 53%, transparent 54%),
     linear-gradient(155deg, #f9e8d2, #eac8a7);
@@ -376,8 +378,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .mini-door__glow {
   position: absolute; inset: 4px;
+  z-index: 0;
   border-radius: 23px 23px 5px 5px;
-  background: radial-gradient(circle at 50% 70%, #fff6bd, #ffd9b4 70%, #e9b99c);
+  background:
+    radial-gradient(circle at 50% 72%, #fff9d2 0 14%, #ffedbc 34%, #ffd7ad 68%, #eab996 100%);
+  box-shadow:
+    inset 0 10px 18px rgba(177, 117, 76, .18),
+    inset 0 -6px 12px rgba(145, 95, 69, .14);
   opacity: 0;
   transition: opacity .3s ease .15s;
 }
