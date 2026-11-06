@@ -6,49 +6,6 @@
     "englishName": "Tree Book House",
     "intro": "一些被光选中的瞬间，住在这里，也等你带走。"
   },
-  "groups": [
-    {
-      "id": "group-13dxn86",
-      "name": "视频测试分组",
-      "description": "验证自己上传的动态视频"
-    }
-  ],
-  "photos": [
-    {
-      "id": "20261106-110648-63m2",
-      "group": "group-13dxn86",
-      "title": "tbh-video-test",
-      "date": "2026-11-06",
-      "original": {
-        "width": 2048,
-        "height": 2048
-      },
-      "variants": {
-        "large": {
-          "src": "media/group-13dxn86/20261106-110648-63m2/large.jpg",
-          "width": 2048,
-          "height": 2048,
-          "bytes": 370641,
-          "ext": "jpg"
-        },
-        "web": {
-          "src": "media/group-13dxn86/20261106-110648-63m2/web.jpg",
-          "width": 1280,
-          "height": 1280,
-          "bytes": 133545,
-          "ext": "jpg"
-        }
-      },
-      "video": {
-        "src": "media/group-13dxn86/20261106-110648-63m2/loop.mp4",
-        "poster": "media/group-13dxn86/20261106-110648-63m2/web.jpg",
-        "type": "video/mp4",
-        "ext": "mp4",
-        "seconds": 6,
-        "bytes": 485202,
-        "width": 768,
-        "height": 960
-      }
-    }
-  ]
+  "groups": [],
+  "photos": []
 }
