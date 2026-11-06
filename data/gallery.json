@@ -11,48 +11,9 @@
       "id": "group-16dhjqu",
       "name": "原神☆哥伦比娅",
       "description": ""
-    },
-    {
-      "id": "group-187lfms",
-      "name": "编辑测试",
-      "description": ""
     }
   ],
   "photos": [
-    {
-      "id": "20261106-141124-f7qz",
-      "group": "group-187lfms",
-      "title": "编辑测试（已修改）",
-      "note": "这是编辑后的介绍",
-      "date": "2026-11-06",
-      "original": {
-        "width": 2048,
-        "height": 2048
-      },
-      "preview": {
-        "src": "media/group-187lfms/20261106-141124-f7qz/preview.jpg",
-        "width": 1280,
-        "height": 1280,
-        "bytes": 126477,
-        "ext": "jpg"
-      },
-      "variants": {
-        "large": {
-          "src": "media/group-187lfms/20261106-141124-f7qz/large.jpg",
-          "width": 2048,
-          "height": 2048,
-          "bytes": 1057973,
-          "ext": "jpg"
-        },
-        "web": {
-          "src": "media/group-187lfms/20261106-141124-f7qz/web-mw4kwlns.jpg",
-          "width": 1200,
-          "height": 630,
-          "bytes": 90407,
-          "ext": "jpg"
-        }
-      }
-    },
     {
       "id": "20261106-131535-a6k4",
       "group": "group-16dhjqu",
