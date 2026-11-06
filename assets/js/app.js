@@ -16,6 +16,7 @@
     galleryIntro: $('#galleryIntro'),
     filters: $('#filters'),
     photoCount: $('#photoCount'),
+    galleryToolbar: $('#galleryToolbar'),
     collectionsList: $('#collectionsList'),
     loadingState: $('#loadingState'),
     emptyState: $('#emptyState'),
@@ -174,8 +175,10 @@
     if (!state.photos.length) {
       els.filters.textContent = '';
       setText(els.photoCount, '');
+      if (els.galleryToolbar) els.galleryToolbar.hidden = true;
       return;
     }
+    if (els.galleryToolbar) els.galleryToolbar.hidden = false;
 
     const groups = orderedGroups();
     renderFilters(groups);

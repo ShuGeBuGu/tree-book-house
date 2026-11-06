@@ -3,7 +3,7 @@
 > **当前状态：已经由我完成第 1–3 步。**
 >
 > - 线上网站：<https://shugebugu.github.io/tree-book-house/>
-> - 管理台：<https://shugebugu.github.io/tree-book-house/admin.html>
+> - 管理台：独立隐藏地址（已单独发给你，不在网站导航中）
 > - 仓库：<https://github.com/ShuGeBuGu/tree-book-house>
 >
 > 现在只剩第 4–5 步：创建一个只授权本仓库的 Token，然后在管理台里连接一次。Token 是 GitHub 写入仓库所必需的安全凭证，GitHub 不允许网页仅凭登录状态就获得写入权限。
@@ -13,7 +13,7 @@
 最终你会得到：
 
 - 一个公开网址，例如 `https://xiaoyu.github.io/tree-book-house/`
-- 一个只有你自己能修改的管理页：`https://xiaoyu.github.io/tree-book-house/admin.html`
+- 一个只有你自己能修改的管理页：独立隐藏地址（没有从网站导航链接过去）
 - 照片、视频、分组都存在你自己的 GitHub 仓库里，不需要服务器，不需要一直开着电脑
 
 ---
@@ -41,7 +41,7 @@
 2. 打开 Windows 资源管理器，进入 `C:\TBH`。
 3. 选中以下内容，拖进 GitHub 网页的上传区域：
    - `index.html`
-   - `admin.html`
+   - 后台管理页（隐藏地址，不公开链接）
    - `404.html`
    - `README.md`、`DEPLOY.md`（可选，但建议保留）
    - `assets` 文件夹
@@ -76,7 +76,7 @@
 
 打开这个网址，应该能看到欢迎页。如果暂时 404，等几分钟再刷新，或者在仓库 **Actions** 里看部署进度。
 
-> 仓库名如果叫 `你的用户名.github.io`，网址就是 `https://你的用户名.github.io/`，没有后面的子路径。管理页是 `https://你的用户名.github.io/admin.html`。
+> 仓库名如果叫 `你的用户名.github.io`，网址就是 `https://你的用户名.github.io/`，没有后面的子路径。后台管理页使用单独保存的隐藏地址，不在网站导航里。
 
 ---
 
@@ -103,10 +103,7 @@
 
 ## 第 5 步：进入管理台，上传第一张照片
 
-1. 打开：
-   ```
-   https://你的用户名.github.io/树屋仓库名/admin.html
-   ```
+1. 打开你单独保存的管理页地址（不在网站导航中）；
 2. 填入：
    - **GitHub 仓库**：`你的用户名/树屋仓库名`
    - **分支**：`main`
@@ -151,7 +148,7 @@ GitHub Pages 在中国大陆有时会慢。你可以让同一个仓库同时发�
 
 之后每次加照片，不需要再碰代码：
 
-1. 打开 `/admin.html`；
+1. 打开你保存的管理页地址；
 2. 如果配置没有被记住，重新填仓库和 Token；
 3. 选分组 / 新建分组；
 4. 拖入图片；
