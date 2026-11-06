@@ -339,7 +339,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
     0 10px 30px rgba(117, 77, 54, .11),
     0 3px 8px rgba(117, 77, 54, .05);
   text-align: left;
-  transition: transform .4s var(--ease-spring), box-shadow .4s ease, background .3s ease;
+  transition: transform .45s var(--ease-soft), box-shadow .4s ease, background .3s ease;
   animation: soft-rise .9s var(--ease-soft) .38s both;
 }
 .door-button:hover {
@@ -407,7 +407,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border-radius: 50%;
   color: #785b50;
   background: var(--pink-soft);
-  transition: background .3s ease, transform .35s var(--ease-spring);
+  transition: background .3s ease, transform .35s var(--ease-soft);
 }
 .door-button__arrow svg { width: 18px; height: 18px; }
 .door-button:hover .door-button__arrow { background: var(--pink); transform: translateX(3px); }
