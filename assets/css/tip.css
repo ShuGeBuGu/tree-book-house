@@ -1,0 +1,368 @@
+/* =========================================================
+   Tree Book House — a little tip jar
+   ========================================================= */
+.tip-page {
+  background: var(--cream);
+}
+.tip-page .topbar--gallery {
+  background: rgba(255, 248, 239, .88);
+}
+.tip-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, .62);
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  transition: color .2s ease, background .25s ease, transform .3s var(--ease-soft);
+}
+.tip-back svg {
+  width: 13px;
+  height: 13px;
+  transition: transform .3s var(--ease-soft);
+}
+.tip-back:hover {
+  color: var(--ink);
+  background: var(--paper);
+  transform: translateY(-1px);
+}
+.tip-back:hover svg { transform: translateX(-3px); }
+
+.tip-shell {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 var(--page-x);
+}
+.tip-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 70px);
+  padding: clamp(44px, 6vw, 80px) 0 clamp(36px, 4.5vw, 56px);
+}
+.tip-hero__copy .eyebrow { margin-bottom: 13px; }
+.tip-hero__copy h1 {
+  margin: 0 0 20px;
+  font-family: var(--font-round);
+  font-size: clamp(48px, 6.1vw, 76px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.04em;
+}
+.tip-hero__copy h1 .script { font-size: 1.03em; }
+.tip-hero .lede {
+  max-width: 475px;
+  font-size: 14.5px;
+  line-height: 2;
+}
+.tip-hero__note {
+  max-width: 430px;
+  margin-top: 19px;
+  padding-left: 16px;
+  border-left: 2px solid var(--pink);
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.9;
+}
+.tip-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+.tip-pills span {
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, .55);
+  color: var(--ink-soft);
+  font-size: 9.5px;
+  letter-spacing: .04em;
+}
+.tip-pills span:first-child { background: var(--green-soft); border-color: rgba(138, 163, 109, .18); color: #71885c; }
+.tip-pills span:last-child { background: var(--pink-soft); border-color: rgba(217, 146, 164, .18); color: #a16b7a; }
+
+.tip-hero__art {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tip-art-card {
+  position: relative;
+  width: min(100%, 390px);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, .92);
+  border-radius: 36px;
+  background:
+    radial-gradient(75% 80% at 15% 10%, rgba(255, 220, 225, .9), transparent 64%),
+    radial-gradient(75% 80% at 95% 95%, rgba(213, 235, 248, .85), transparent 65%),
+    rgba(255, 253, 249, .72);
+  box-shadow: var(--shadow-md);
+  transform: rotate(1.2deg);
+  animation: tip-float 7s ease-in-out infinite;
+}
+.tip-art-card::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 1px dashed rgba(126, 90, 70, .14);
+  border-radius: 28px;
+  pointer-events: none;
+}
+.tip-mug {
+  width: 100%;
+  height: auto;
+  position: relative;
+  z-index: 1;
+}
+.tip-sticker {
+  position: absolute;
+  z-index: 2;
+  top: 25px;
+  right: 23px;
+  display: grid;
+  place-items: center;
+  width: 77px;
+  height: 77px;
+  border-radius: 50%;
+  background: var(--butter);
+  color: #7f643c;
+  font-family: var(--font-round);
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: .1em;
+  text-align: center;
+  transform: rotate(9deg);
+  box-shadow: 0 7px 15px rgba(120, 82, 57, .1);
+}
+.tip-spark {
+  position: absolute;
+  color: var(--butter-deep);
+  font-size: 21px;
+  animation: twinkle 4.8s ease-in-out infinite;
+}
+.tip-spark--one { top: 37%; left: 12px; }
+.tip-spark--two { right: 21px; bottom: 26%; color: var(--pink-deep); font-size: 16px; animation-delay: -2s; }
+.tip-art-caption {
+  margin-top: 18px;
+  color: var(--ink-faint);
+  font-family: var(--font-round);
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+@keyframes tip-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -7px; }
+}
+
+/* ---------- tip jar / payment cards ---------- */
+.tip-give {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 4.5vw, 52px);
+  border: 1px solid rgba(255, 255, 255, .92);
+  border-radius: 32px;
+  background:
+    radial-gradient(55% 75% at 100% 0%, rgba(255, 232, 213, .55), transparent 65%),
+    radial-gradient(50% 70% at 0% 100%, rgba(226, 241, 210, .5), transparent 65%),
+    rgba(255, 253, 249, .76);
+  box-shadow: var(--shadow-sm);
+}
+.tip-give__head {
+  max-width: 630px;
+  margin: 0 auto;
+  text-align: center;
+}
+.tip-give__kicker {
+  font-size: 8px;
+  letter-spacing: .22em;
+  color: var(--pink-deep);
+  font-weight: 600;
+}
+.tip-give__head h2 {
+  margin: 10px 0 9px;
+  font-family: var(--font-round);
+  font-size: clamp(28px, 3.4vw, 42px);
+  line-height: 1.25;
+  letter-spacing: -.03em;
+}
+.tip-give__head p {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  line-height: 1.9;
+}
+.tip-qr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(15px, 2.5vw, 24px);
+  max-width: 730px;
+  margin: 30px auto 0;
+}
+.tip-qr-card {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fffdfa;
+  box-shadow: 0 10px 28px rgba(109, 77, 58, .06);
+  text-align: center;
+  transition: transform .35s var(--ease-soft), box-shadow .35s ease;
+}
+.tip-qr-card:hover { transform: translateY(-4px); box-shadow: 0 19px 40px rgba(109, 77, 58, .12); }
+.tip-qr-card::before {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  top: -105px;
+  right: -80px;
+  border-radius: 50%;
+  opacity: .7;
+  filter: blur(7px);
+}
+.tip-qr-card--wechat::before { background: #dbefdf; }
+.tip-qr-card--alipay::before { background: #dce9fc; }
+.tip-qr-card__head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 3px 12px;
+}
+.tip-pay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+.tip-pay-badge > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #23ae5a;
+}
+.tip-qr-card--alipay .tip-pay-badge > span { background: #1677ff; }
+.tip-qr-card__en {
+  color: var(--ink-faint);
+  font-size: 7.5px;
+  letter-spacing: .14em;
+}
+.tip-qr-frame {
+  position: relative;
+  z-index: 1;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: #fff;
+}
+.tip-qr-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+.tip-qr-card__hint {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: .06em;
+}
+.tip-disclaimer {
+  max-width: 570px;
+  margin: 26px auto 0;
+  color: var(--ink-faint);
+  font-size: 9.5px;
+  line-height: 1.9;
+  text-align: center;
+}
+.tip-quote {
+  position: relative;
+  padding: clamp(46px, 7vw, 86px) 20px clamp(56px, 8vw, 100px);
+  text-align: center;
+}
+.tip-quote__mark {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--pink);
+  font-size: 24px;
+}
+.tip-quote p {
+  font-family: var(--font-round);
+  font-size: clamp(23px, 3vw, 34px);
+  line-height: 1.55;
+  color: rgba(87, 67, 59, .82);
+  letter-spacing: -.025em;
+}
+.tip-quote__sign {
+  display: block;
+  margin-top: 18px;
+  color: var(--ink-faint);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+}
+.tip-footer {
+  border-top: 1px solid var(--line);
+}
+.tip-footer .site-footer__meta a {
+  color: var(--ink-faint);
+  transition: color .2s ease;
+}
+.tip-footer .site-footer__meta a:hover { color: var(--pink-deep); }
+
+@media (max-width: 880px) {
+  .tip-hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-top: 42px;
+  }
+  .tip-hero__art { order: -1; }
+  .tip-art-card { width: min(76%, 300px); }
+  .tip-art-caption { display: none; }
+  .tip-hero__copy { text-align: center; }
+  .tip-hero__copy .eyebrow { justify-content: center; }
+  .tip-hero .lede,
+  .tip-hero__note { margin-left: auto; margin-right: auto; }
+  .tip-hero__note { border-left: 0; border-top: 1px solid var(--line); padding: 15px 0 0; }
+  .tip-pills { justify-content: center; }
+}
+@media (max-width: 620px) {
+  .tip-back { font-size: 9.5px; padding: 7px 10px; }
+  .tip-shell { padding-top: 0; }
+  .tip-hero { padding-top: 32px; gap: 24px; }
+  .tip-art-card { width: min(66%, 245px); padding: 17px; border-radius: 28px; }
+  .tip-sticker { width: 60px; height: 60px; top: 17px; right: 15px; font-size: 7px; }
+  .tip-hero__copy h1 { font-size: clamp(43px, 12vw, 58px); }
+  .tip-hero .lede { font-size: 12.5px; line-height: 1.9; }
+  .tip-hero__note { font-size: 10px; }
+  .tip-pills { margin-top: 18px; }
+  .tip-give { padding: 23px 14px 25px; border-radius: 24px; }
+  .tip-give__head h2 { font-size: 27px; }
+  .tip-give__head p { font-size: 10.5px; }
+  .tip-qr-grid { grid-template-columns: 1fr; max-width: 340px; gap: 14px; margin-top: 22px; }
+  .tip-qr-card { padding: 13px; border-radius: 20px; }
+  .tip-qr-card:hover { transform: none; }
+  .tip-qr-card__head { padding-bottom: 9px; }
+  .tip-qr-frame { padding: 8px; border-radius: 14px; }
+  .tip-disclaimer { margin-top: 20px; font-size: 9px; }
+  .tip-quote { padding: 42px 14px 60px; }
+  .tip-quote p { font-size: 22px; }
+  .tip-footer { flex-direction: column; align-items: flex-start; gap: 13px; }
+  .tip-footer .site-footer__meta { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tip-art-card { animation: none; }
+}
