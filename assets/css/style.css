@@ -658,6 +658,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   gap: clamp(16px, 2.2vw, 28px);
 }
 .photo-card {
@@ -702,13 +703,11 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .photo-card__image, .photo-card__video {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
-  object-fit: cover;
   transition: transform 1.1s var(--ease-soft), opacity .4s ease;
 }
-.photo-card__image { z-index: 1; }
-.photo-card__video { z-index: 2; opacity: 0; }
+.photo-card__image { z-index: 1; object-fit: contain; }
+.photo-card__video { z-index: 2; object-fit: cover; opacity: 0; }
 .photo-card__video.is-playing { opacity: 1; }
-.photo-card__button:hover .photo-card__image { transform: scale(1.045); }
 .photo-card__badge {
   position: absolute; z-index: 5;
   top: 12px; left: 12px;

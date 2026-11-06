@@ -255,6 +255,7 @@
     img.loading = 'lazy';
     img.decoding = 'async';
     if (web?.width && web?.height) {
+      frame.style.aspectRatio = `${web.width} / ${web.height}`;
       img.width = web.width;
       img.height = web.height;
     }
