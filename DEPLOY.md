@@ -1,5 +1,13 @@
 # 免费上线 · 从 0 到有网址
 
+> **当前状态：已经由我完成第 1–3 步。**
+>
+> - 线上网站：<https://shugebugu.github.io/tree-book-house/>
+> - 管理台：<https://shugebugu.github.io/tree-book-house/admin.html>
+> - 仓库：<https://github.com/ShuGeBuGu/tree-book-house>
+>
+> 现在只剩第 4–5 步：创建一个只授权本仓库的 Token，然后在管理台里连接一次。Token 是 GitHub 写入仓库所必需的安全凭证，GitHub 不允许网页仅凭登录状态就获得写入权限。
+
 这份说明按“我什么都不会”的路径来写。整个过程只需要一个 GitHub 账号、浏览器，以及这个 `C:\TBH` 文件夹。
 
 最终你会得到：
