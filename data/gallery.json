@@ -46,6 +46,13 @@
         "height": 720,
         "bytes": 173776,
         "ext": "jpg"
+      },
+      "thumb": {
+        "src": "media/group-16dhjqu/20261106-131535-a6k4/thumb.jpg",
+        "width": 640,
+        "height": 360,
+        "bytes": 50846,
+        "ext": "jpg"
       }
     }
   ]

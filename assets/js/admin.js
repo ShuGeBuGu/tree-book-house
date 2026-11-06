@@ -10,6 +10,8 @@
   const IMAGE_MAX = 80 * 1024 * 1024;
   const PREVIEW_EDGE = 1280;
   const PREVIEW_QUALITY = 0.82;
+  const THUMB_EDGE = 640;
+  const THUMB_QUALITY = 0.78;
   const VIDEO_PREVIEW_BITRATE = 2_000_000;
   const QUEUE_MAX = 30;
   const VIDEO_MAX = 60 * 1024 * 1024;
@@ -533,10 +535,10 @@
     });
   }
 
-  async function makePreviewImage(source) {
+  async function makeResizedJpeg(source, maxEdge, quality) {
     const src = sourceSize(source);
     if (!src.width || !src.height) throw new Error('无法读取这张图片的尺寸。');
-    const scale = Math.min(1, PREVIEW_EDGE / Math.max(src.width, src.height));
+    const scale = Math.min(1, maxEdge / Math.max(src.width, src.height));
     const width = Math.max(1, Math.round(src.width * scale));
     const height = Math.max(1, Math.round(src.height * scale));
     const canvas = document.createElement('canvas');
@@ -548,8 +550,16 @@
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(source, 0, 0, width, height);
-    const blob = await canvasToBlob(canvas, 'image/jpeg', PREVIEW_QUALITY);
+    const blob = await canvasToBlob(canvas, 'image/jpeg', quality);
     return { blob, width, height };
+  }
+
+  function makePreviewImage(source) {
+    return makeResizedJpeg(source, PREVIEW_EDGE, PREVIEW_QUALITY);
+  }
+
+  function makeThumbImage(source) {
+    return makeResizedJpeg(source, THUMB_EDGE, THUMB_QUALITY);
   }
 
   async function makeVideoPreview(file, meta) {
@@ -1238,15 +1248,24 @@
         setOverallProgress(itemBase + itemSpan * 0.04, `第 ${index + 1} / ${total} 张：正在生成预览`);
 
         let previewImage = null;
+        let thumbImage = null;
         try {
           const source = await decodeImage(large.file);
           try {
             previewImage = await makePreviewImage(source);
+          } catch (_) {
+            previewImage = null;
+          }
+          try {
+            thumbImage = await makeThumbImage(source);
+          } catch (_) {
+            thumbImage = null;
           } finally {
             if (source.close) source.close();
           }
         } catch (_) {
           previewImage = null;
+          thumbImage = null;
         }
 
         item.progress = 12;
@@ -1275,6 +1294,21 @@
             width: previewImage.width,
             height: previewImage.height,
             bytes: previewImage.blob.size,
+            ext: 'jpg',
+          };
+        }
+
+        let thumbMeta = null;
+        if (thumbImage) {
+          item.statusText = '正在上传 360P 缩略图…';
+          updateQueueItem(item);
+          const thumbSrc = `${folder}/thumb.jpg`;
+          await uploadBuffer(thumbSrc, thumbImage.blob, treeEntries);
+          thumbMeta = {
+            src: thumbSrc,
+            width: thumbImage.width,
+            height: thumbImage.height,
+            bytes: thumbImage.blob.size,
             ext: 'jpg',
           };
         }
@@ -1338,6 +1372,7 @@
           date: todayISO(),
           original: { width: large.width, height: large.height },
           ...(previewMeta ? { preview: previewMeta } : {}),
+          ...(thumbMeta ? { thumb: thumbMeta } : {}),
           variants: {
             large: {
               src: `${folder}/large.${large.ext}`,
@@ -1452,6 +1487,7 @@
   function mediaBytes(photo) {
     return ['large', 'web'].reduce((sum, key) => sum + (Number(photo.variants?.[key]?.bytes) || 0), 0)
       + (Number(photo.preview?.bytes) || 0)
+      + (Number(photo.thumb?.bytes) || 0)
       + (Number(photo.video?.bytes) || 0)
       + (Number(photo.video?.preview?.bytes) || 0);
   }
@@ -1496,7 +1532,7 @@
         figure.setAttribute('role', 'button');
         figure.setAttribute('aria-label', `编辑照片：${photo.title || '未命名'}`);
         const img = document.createElement('img');
-        img.src = photo.preview?.src || photo.variants?.web?.src || '';
+        img.src = photo.thumb?.src || photo.preview?.src || photo.variants?.web?.src || '';
         img.alt = photo.title || '照片';
         img.loading = 'lazy';
         const bar = document.createElement('div');
@@ -1544,7 +1580,7 @@
         figure.setAttribute('role', 'button');
         figure.setAttribute('aria-label', `编辑照片：${photo.title || '未命名'}`);
         const img = document.createElement('img');
-        img.src = photo.preview?.src || photo.variants?.web?.src || '';
+        img.src = photo.thumb?.src || photo.preview?.src || photo.variants?.web?.src || '';
         img.alt = photo.title || '照片';
         img.loading = 'lazy';
         const bar = document.createElement('div');
@@ -1841,27 +1877,52 @@
           ext: largeReplacement.ext,
         };
         updatedPhoto.original = { width: largeReplacement.width, height: largeReplacement.height };
-        setEditStatus('正在生成新的 720P 预览图…');
+        setEditStatus('正在生成新的 720P 预览图和 360P 缩略图…');
+        let preview = null;
+        let thumb = null;
         try {
           const source = await decodeImage(largeReplacement.file);
           try {
-            const preview = await makePreviewImage(source);
-            const previewSrc = uniqueEditPath(folder, 'preview', 'jpg', stamp);
-            await uploadBuffer(previewSrc, preview.blob, treeEntries);
-            if (photo.preview?.src) deletePaths.add(photo.preview.src);
-            updatedPhoto.preview = {
-              src: previewSrc,
-              width: preview.width,
-              height: preview.height,
-              bytes: preview.blob.size,
-              ext: 'jpg',
-            };
+            try { preview = await makePreviewImage(source); } catch (_) { preview = null; }
+            try { thumb = await makeThumbImage(source); } catch (_) { thumb = null; }
           } finally {
             if (source.close) source.close();
           }
         } catch (_) {
+          preview = null;
+          thumb = null;
+        }
+
+        if (preview) {
+          const previewSrc = uniqueEditPath(folder, 'preview', 'jpg', stamp);
+          await uploadBuffer(previewSrc, preview.blob, treeEntries);
+          if (photo.preview?.src) deletePaths.add(photo.preview.src);
+          updatedPhoto.preview = {
+            src: previewSrc,
+            width: preview.width,
+            height: preview.height,
+            bytes: preview.blob.size,
+            ext: 'jpg',
+          };
+        } else {
           if (photo.preview?.src) deletePaths.add(photo.preview.src);
           delete updatedPhoto.preview;
+        }
+
+        if (thumb) {
+          const thumbSrc = uniqueEditPath(folder, 'thumb', 'jpg', stamp);
+          await uploadBuffer(thumbSrc, thumb.blob, treeEntries);
+          if (photo.thumb?.src) deletePaths.add(photo.thumb.src);
+          updatedPhoto.thumb = {
+            src: thumbSrc,
+            width: thumb.width,
+            height: thumb.height,
+            bytes: thumb.blob.size,
+            ext: 'jpg',
+          };
+        } else {
+          if (photo.thumb?.src) deletePaths.add(photo.thumb.src);
+          delete updatedPhoto.thumb;
         }
       }
 
@@ -2036,6 +2097,7 @@
             if (src) deletePaths.add(src);
           });
           if (photo.preview?.src) deletePaths.add(photo.preview.src);
+          if (photo.thumb?.src) deletePaths.add(photo.thumb.src);
           if (photo.video?.src) deletePaths.add(photo.video.src);
           if (photo.video?.preview?.src && photo.video.preview.src !== photo.video.src) {
             deletePaths.add(photo.video.preview.src);
