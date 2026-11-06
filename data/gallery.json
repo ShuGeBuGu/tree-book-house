@@ -15,6 +15,43 @@
   ],
   "photos": [
     {
+      "id": "20261106-125900-ygx5",
+      "group": "group-ff9ojc",
+      "title": "测试照片 · 请删除",
+      "note": "这是一张用于验证三版本上传、动态壁纸预览和下载按钮的测试照片。",
+      "date": "2026-11-06",
+      "original": {
+        "width": 2048,
+        "height": 2048
+      },
+      "variants": {
+        "large": {
+          "src": "media/group-ff9ojc/20261106-125900-ygx5/large.jpg",
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1057973,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/group-ff9ojc/20261106-125900-ygx5/web.webp",
+          "width": 852,
+          "height": 1100,
+          "bytes": 144658,
+          "ext": "webp"
+        }
+      },
+      "video": {
+        "src": "media/group-ff9ojc/20261106-125900-ygx5/wallpaper.webm",
+        "poster": "media/group-ff9ojc/20261106-125900-ygx5/web.webp",
+        "type": "video/webm",
+        "ext": "webm",
+        "seconds": 2.2,
+        "bytes": 51477,
+        "width": 480,
+        "height": 360
+      }
+    },
+    {
       "id": "20261106-124310-by19",
       "group": "group-ff9ojc",
       "title": "4k壁纸",
