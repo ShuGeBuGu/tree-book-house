@@ -708,6 +708,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .photo-card__image { z-index: 1; object-fit: contain; }
 .photo-card__video { z-index: 2; object-fit: cover; opacity: 0; }
 .photo-card__video.is-playing { opacity: 1; }
+.photo-card__button:hover .photo-card__image { transform: scale(1.045); }
 .photo-card__badge {
   position: absolute; z-index: 5;
   top: 12px; left: 12px;
