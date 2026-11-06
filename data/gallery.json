@@ -6,6 +6,40 @@
     "englishName": "Tree Book House",
     "intro": "一些被光选中的瞬间，住在这里，也等你带走。"
   },
-  "groups": [],
-  "photos": []
+  "groups": [
+    {
+      "id": "group-16dhjqu",
+      "name": "原神☆哥伦比娅",
+      "description": ""
+    }
+  ],
+  "photos": [
+    {
+      "id": "20261106-131535-a6k4",
+      "group": "group-16dhjqu",
+      "title": "清辉漫水，天使的夜曲",
+      "note": "弯月悬于缀满碎星的夜幕，粼粼水光托着白衣歌者。哥伦比娅舒展莹白羽翼，眼上的封带隔绝尘世目光，长发如紫墨流霞，随夜风轻轻漾开。她是愚人众执行官少女，是为世界咏唱的歌者，在静谧星河之间，低吟无人听懂的诗篇，温柔又裹挟着遥远的神秘。",
+      "date": "2026-11-06",
+      "original": {
+        "width": 3840,
+        "height": 2160
+      },
+      "variants": {
+        "large": {
+          "src": "media/group-16dhjqu/20261106-131535-a6k4/large.jpg",
+          "width": 3840,
+          "height": 2160,
+          "bytes": 3918616,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/group-16dhjqu/20261106-131535-a6k4/web.jpg",
+          "width": 1920,
+          "height": 1080,
+          "bytes": 1561150,
+          "ext": "jpg"
+        }
+      }
+    }
+  ]
 }
