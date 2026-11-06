@@ -247,6 +247,7 @@
       response = await fetch(API + path, {
         method,
         headers,
+        cache: 'no-store',
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch (error) {
@@ -1145,6 +1146,43 @@
     return result.sha;
   }
 
+  function isGitConflict(error) {
+    return error?.status === 409
+      || error?.status === 422
+      || /fast forward|Tree SHA does not exist|拒绝这次提交/i.test(String(error?.message || ''));
+  }
+
+  async function commitTreeWithRetry(treeEntries, message) {
+    let lastError = null;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (attempt) {
+        await sleep(1000 * attempt);
+        await fetchRepositoryState();
+      }
+      try {
+        const tree = await api(`${repoApiPath()}/git/trees`, {
+          method: 'POST',
+          body: { base_tree: state.treeSha, tree: treeEntries },
+        });
+        const commit = await api(`${repoApiPath()}/git/commits`, {
+          method: 'POST',
+          body: { message, tree: tree.sha, parents: [state.headSha] },
+        });
+        await api(`${repoApiPath()}/git/refs/heads/${branchPath()}`, {
+          method: 'PATCH',
+          body: { sha: commit.sha, force: false },
+        });
+        state.headSha = commit.sha;
+        state.treeSha = tree.sha;
+        return commit;
+      } catch (error) {
+        lastError = error;
+        if (!isGitConflict(error)) throw error;
+      }
+    }
+    throw lastError;
+  }
+
   async function publish() {
     if (state.busy || !state.connected || !state.queue.length) return;
     state.busy = true;
@@ -1338,26 +1376,9 @@
       await uploadBuffer('data/gallery.json', manifestBlob, treeEntries);
 
       setOverallProgress(98, '正在创建一次提交…');
-      const tree = await api(`${repoApiPath()}/git/trees`, {
-        method: 'POST',
-        body: { base_tree: state.treeSha, tree: treeEntries },
-      });
       const countLabel = createdPhotos.length === 1 ? '1 photo' : `${createdPhotos.length} photos`;
-      const commit = await api(`${repoApiPath()}/git/commits`, {
-        method: 'POST',
-        body: {
-          message: `Add ${countLabel} · Tree Book House`,
-          tree: tree.sha,
-          parents: [state.headSha],
-        },
-      });
-      await api(`${repoApiPath()}/git/refs/heads/${branchPath()}`, {
-        method: 'PATCH',
-        body: { sha: commit.sha, force: false },
-      });
+      const commit = await commitTreeWithRetry(treeEntries, `Add ${countLabel} · Tree Book House`);
 
-      state.headSha = commit.sha;
-      state.treeSha = tree.sha;
       state.manifest = manifest;
       state.lastPublish = { count: createdPhotos.length, commit: commit.sha };
       state.busy = false;
@@ -1781,7 +1802,12 @@
     setEditStatus('正在读取仓库最新状态…');
     try {
       await fetchRepositoryState();
-      const photo = editPhoto();
+      let photo = editPhoto();
+      for (let attempt = 0; !photo && attempt < 3; attempt += 1) {
+        await sleep(700);
+        await fetchRepositoryState();
+        photo = editPhoto();
+      }
       if (!photo) throw new Error('这张照片已经不存在了，请刷新后再试。');
       const folderSource = photo.variants?.large?.src || photo.variants?.web?.src || '';
       const folder = folderSource.split('/').slice(0, -1).join('/');
@@ -1918,25 +1944,8 @@
       });
 
       setEditStatus('正在创建提交…');
-      const tree = await api(`${repoApiPath()}/git/trees`, {
-        method: 'POST',
-        body: { base_tree: state.treeSha, tree: treeEntries },
-      });
-      const commit = await api(`${repoApiPath()}/git/commits`, {
-        method: 'POST',
-        body: {
-          message: `Edit photo · ${updatedPhoto.title || 'Untitled'} · Tree Book House`,
-          tree: tree.sha,
-          parents: [state.headSha],
-        },
-      });
-      await api(`${repoApiPath()}/git/refs/heads/${branchPath()}`, {
-        method: 'PATCH',
-        body: { sha: commit.sha, force: false },
-      });
+      const commit = await commitTreeWithRetry(treeEntries, `Edit photo · ${updatedPhoto.title || 'Untitled'} · Tree Book House`);
 
-      state.headSha = commit.sha;
-      state.treeSha = tree.sha;
       state.manifest = manifest;
       state.editSaving = false;
       revokeEditObjectUrls();
