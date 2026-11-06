@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>树屋管理 · Tree Book House</title>
+  <meta name="theme-color" content="#fff8ef">
+  <link rel="icon" href="assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body class="admin-body">
+  <a class="skip-link" href="#adminMain">跳到主要内容</a>
+
+  <div class="admin-backdrop" aria-hidden="true">
+    <div class="admin-backdrop__glow admin-backdrop__glow--one"></div>
+    <div class="admin-backdrop__glow admin-backdrop__glow--two"></div>
+    <div class="admin-backdrop__grain"></div>
+  </div>
+
+  <header class="admin-topbar">
+    <a class="admin-brand" href="index.html">
+      <span class="admin-brand__mark"><img src="assets/brand/logo.webp" alt="" width="852" height="1100"></span>
+      <span class="admin-brand__text"><strong>Tree Book House</strong><small>树屋管理室</small></span>
+    </a>
+    <div class="admin-topbar__actions">
+      <span class="connection-pill" id="connectionPill" data-state="offline"><span></span><span id="connectionText">尚未连接</span></span>
+      <a class="topbar-link" href="index.html">查看网站 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </header>
+
+  <main class="admin-main" id="adminMain">
+    <section class="admin-hero">
+      <div class="admin-hero__copy">
+        <p class="admin-eyebrow"><span></span> THE KEEPER'S DESK</p>
+        <h1>把新的光，<br>放进<span class="admin-script">树屋</span>。</h1>
+        <p class="admin-lede">选好照片，取一个分组名，剩下的交给这里。<br>会自动生成两个尺寸和一段会呼吸的循环视频。</p>
+        <div class="admin-hero__chips">
+          <span>自动识别分辨率</span>
+          <span>自动压缩</span>
+          <span>一键发布</span>
+        </div>
+      </div>
+      <div class="admin-hero__steps" aria-label="发布步骤">
+        <div class="admin-note-card">
+          <span class="admin-note-card__tape" aria-hidden="true"></span>
+          <p class="admin-note-card__label">HOW IT WORKS</p>
+          <ol>
+            <li><span>01</span><div><strong>连接仓库</strong><small>照片会住进你的 GitHub 仓库</small></div></li>
+            <li><span>02</span><div><strong>放入照片</strong><small>两个尺寸 + 循环视频自动完成</small></div></li>
+            <li><span>03</span><div><strong>推开门</strong><small>发布后网站会自动更新</small></div></li>
+          </ol>
+          <p class="admin-note-card__foot">无需服务器 · 无需一直开着电脑</p>
+        </div>
+        <span class="admin-hero__spark admin-hero__spark--one" aria-hidden="true">✦</span>
+        <span class="admin-hero__spark admin-hero__spark--two" aria-hidden="true">✧</span>
+      </div>
+    </section>
+
+    <div class="admin-alert admin-alert--warn" id="repoSetupHint">
+      <span aria-hidden="true">✦</span>
+      <p>第一次使用？请先确认网站文件已经上传到 GitHub，并开启了 GitHub Pages。下面的 <button type="button" class="inline-button" id="openGuide">三步说明</button> 会带你完成。</p>
+    </div>
+
+    <!-- 01 connect -->
+    <section class="admin-panel" id="setupPanel" aria-labelledby="setupTitle">
+      <div class="admin-panel__head">
+        <span class="admin-panel__num">01</span>
+        <div>
+          <h2 id="setupTitle">连接你的仓库</h2>
+          <p>只在这个浏览器里保存访问凭证，不会上传到任何其他地方。</p>
+        </div>
+        <span class="panel-state" id="setupState">待连接</span>
+      </div>
+
+      <form class="setup-form" id="setupForm" autocomplete="off">
+        <div class="field field--wide">
+          <label for="repoInput">GitHub 仓库 <span>用户名 / 仓库名</span></label>
+          <input id="repoInput" name="repo" type="text" placeholder="例如：yourname/tree-book-house" spellcheck="false" autocapitalize="off">
+        </div>
+        <div class="field">
+          <label for="branchInput">分支</label>
+          <input id="branchInput" name="branch" type="text" value="main" spellcheck="false" autocapitalize="off">
+        </div>
+        <div class="field field--token">
+          <label for="tokenInput">Fine-grained Token <span>仅限此仓库 Contents 读写</span></label>
+          <div class="token-wrap">
+            <input id="tokenInput" name="token" type="password" placeholder="github_pat_..." spellcheck="false" autocapitalize="off">
+            <button type="button" class="token-toggle" id="tokenToggle" aria-label="显示 Token">显示</button>
+          </div>
+        </div>
+        <div class="setup-form__actions">
+          <label class="check">
+            <input type="checkbox" id="rememberInput">
+            <span class="check__box" aria-hidden="true"></span>
+            <span>在这台设备记住配置<small>方便下次打开直接使用；公共电脑请勿勾选</small></span>
+          </label>
+          <button type="submit" class="primary-button" id="connectButton">
+            <span class="button-label">连接仓库</span>
+            <span class="button-spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
+
+      <div class="setup-status" id="setupStatus" role="status" aria-live="polite"></div>
+
+      <details class="setup-help">
+        <summary>怎么创建 Token？<span aria-hidden="true">＋</span></summary>
+        <div class="setup-help__body">
+          <ol>
+            <li>打开 GitHub → 右上角头像 → <strong>Settings</strong> → <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong>。</li>
+            <li>点击 <strong>Generate new token</strong>，Repository access 选择 <strong>Only select repositories</strong>，只勾选你的网站仓库。</li>
+            <li>Permissions → Repository permissions → 找到 <strong>Contents</strong>，设为 <strong>Read and write</strong>；Metadata 保持 Read-only。</li>
+            <li>生成后复制以 <code>github_pat_</code> 开头的 Token，粘贴到上面。它只用于向这个仓库提交照片。</li>
+          </ol>
+          <p>Token 就像一把钥匙。不要发给别人；如果怀疑泄露，去 GitHub 页面 Revoke 掉再重新生成即可。</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 02 upload -->
+    <section class="admin-panel is-locked" id="uploadPanel" aria-labelledby="uploadTitle">
+      <div class="admin-panel__head">
+        <span class="admin-panel__num">02</span>
+        <div>
+          <h2 id="uploadTitle">把照片放进树屋</h2>
+          <p>支持 JPG、PNG、WebP；一次可以选择多张。</p>
+        </div>
+        <span class="panel-state" id="uploadState">连接后可用</span>
+      </div>
+
+      <div class="panel-lock-note" id="panelLockNote"><span aria-hidden="true">🔒</span> 先完成上方连接，就可以开始上传啦。</div>
+
+      <div class="upload-body" id="uploadBody">
+        <div class="group-picker">
+          <div class="group-picker__text">
+            <span class="mini-label">PHOTO GROUP</span>
+            <h3>放在哪个分组？</h3>
+            <p>每一组会在网站上形成一个小展区。</p>
+          </div>
+          <div class="group-picker__controls">
+            <div class="field">
+              <label class="sr-only" for="groupSelect">照片分组</label>
+              <select id="groupSelect"></select>
+            </div>
+            <div class="new-group-fields" id="newGroupFields" hidden>
+              <div class="field">
+                <label for="newGroupName">新分组名称</label>
+                <input id="newGroupName" type="text" maxlength="24" placeholder="例如：夏日散步">
+              </div>
+              <div class="field">
+                <label for="newGroupDesc">一句描述 <span>可选</span></label>
+                <input id="newGroupDesc" type="text" maxlength="48" placeholder="例如：风从树叶间经过。">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-controls="fileInput" aria-label="选择或拖入照片">
+          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple hidden>
+          <div class="dropzone__art" aria-hidden="true">
+            <span class="dropzone__sun"></span>
+            <span class="dropzone__hill"></span>
+            <span class="dropzone__house"><i></i></span>
+            <span class="dropzone__plus">＋</span>
+          </div>
+          <p class="dropzone__title">把照片拖到这里</p>
+          <p class="dropzone__hint">或者 <span>点击选择文件</span> · 建议每次 1–20 张</p>
+          <p class="dropzone__note">照片只会在你的浏览器里处理，处理完才会上传到仓库</p>
+        </div>
+
+        <div class="queue" id="queueWrap" hidden>
+          <div class="queue__head">
+            <h3>待放入的照片 <span id="queueCount">0</span></h3>
+            <button type="button" class="text-button" id="clearQueue">清空</button>
+          </div>
+          <ul class="queue__list" id="queueList"></ul>
+        </div>
+
+        <div class="publish-settings" id="publishSettings" hidden>
+          <div class="setting-row">
+            <div class="setting-copy">
+              <strong>自动生成动态背景视频</strong>
+              <span>6 秒静音循环，会随高清/轻量图片一起生成。适合点击照片后的动态预览。</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="videoToggle" checked>
+              <span class="switch__track" aria-hidden="true"><span></span></span>
+              <span class="sr-only">自动生成动态背景视频</span>
+            </label>
+          </div>
+          <div class="setting-row setting-row--summary">
+            <div class="publish-summary" id="publishSummary">还没有添加照片</div>
+            <button type="button" class="publish-button" id="publishButton" disabled>
+              <span class="button-label">发布到树屋</span>
+              <span class="button-spinner" aria-hidden="true"></span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="progress" id="progressWrap" hidden>
+            <div class="progress__bar"><span id="progressBar"></span></div>
+            <p class="progress__label" id="progressLabel">准备中…</p>
+          </div>
+          <div class="publish-log" id="publishLog" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 manage -->
+    <section class="admin-panel is-locked" id="managePanel" aria-labelledby="manageTitle">
+      <div class="admin-panel__head">
+        <span class="admin-panel__num">03</span>
+        <div>
+          <h2 id="manageTitle">树屋里的照片</h2>
+          <p>查看现有分组，或把不再展示的照片取下来。</p>
+        </div>
+        <span class="panel-state" id="manageState">待连接</span>
+        <button type="button" class="ghost-button" id="refreshButton" disabled>刷新 <span aria-hidden="true">↻</span></button>
+      </div>
+      <div class="panel-lock-note" id="manageLockNote"><span aria-hidden="true">🔒</span> 连接仓库后，这里会显示现有照片。</div>
+
+      <div class="manage-body" id="manageBody" hidden>
+        <div class="manage-summary">
+          <div><span id="totalPhotoCount">0</span><small>张照片</small></div>
+          <div><span id="totalGroupCount">0</span><small>个分组</small></div>
+          <div><span id="repoSize">—</span><small>媒体占用</small></div>
+          <button type="button" class="danger-text" id="removeDemoButton" hidden>移除全部示例内容</button>
+        </div>
+        <div class="manage-groups" id="manageGroups"></div>
+        <div class="manage-empty" id="manageEmpty" hidden>树屋里还没有照片，去上面放入第一张吧。</div>
+      </div>
+    </section>
+
+    <section class="admin-panel admin-panel--info">
+      <div class="info-grid">
+        <div>
+          <span class="mini-label">A NOTE ABOUT “FOREVER”</span>
+          <h2>关于“照片永远不会过期”</h2>
+          <p>网站是纯静态页面，没有会过期的图床链接。只要 GitHub 仓库还在、GitHub Pages 正常服务，照片就一直能访问。也建议你保留一份原始照片备份，那是最踏实的一层保险。</p>
+        </div>
+        <div>
+          <span class="mini-label">SECURITY</span>
+          <h2>关于安全</h2>
+          <p>Token 只保存在你自己的浏览器里，除非你勾选“记住配置”。使用 Fine-grained Token，并只授权当前仓库的 Contents 读写权限。网站访客没有 Token，无法修改照片。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="admin-footer">
+    <span>Tree Book House · 树屋管理室</span>
+    <span>MADE FOR SMALL, LOVELY MOMENTS</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="confirm-dialog" id="confirmDialog" aria-labelledby="confirmTitle">
+    <div class="confirm-dialog__icon" aria-hidden="true">?</div>
+    <h2 id="confirmTitle">确定要这样做吗？</h2>
+    <p id="confirmText"></p>
+    <div class="confirm-dialog__actions">
+      <button type="button" class="ghost-button" id="confirmCancel">先不要</button>
+      <button type="button" class="danger-button" id="confirmOk">确定</button>
+    </div>
+  </dialog>
+
+  <script src="assets/js/admin.js" defer></script>
+</body>
+</html>

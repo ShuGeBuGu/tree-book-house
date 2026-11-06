@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>树屋 · Tree Book House</title>
+  <meta name="description" content="欢迎来到树屋。推开门，看看藏在树叶与书页间的照片，并把喜欢的瞬间带回家。">
+  <meta name="theme-color" content="#fff8ef">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="树屋 · Tree Book House">
+  <meta property="og:description" content="把喜欢的瞬间，藏在树叶和书页之间。">
+  <meta property="og:image" content="assets/brand/og.jpg">
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="树屋">
+  <link rel="icon" href="assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/brand/favicon-180.png">
+  <link rel="preload" href="assets/brand/logo.webp" as="image" type="image/webp">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="is-welcome">
+  <a class="skip-link" href="#main">跳到照片区</a>
+
+  <div class="background" aria-hidden="true">
+    <div class="background__wash"></div>
+    <div class="lollipop lollipop--one"></div>
+    <div class="lollipop lollipop--two"></div>
+    <div class="cloud cloud--one"></div>
+    <div class="cloud cloud--two"></div>
+    <div class="cloud cloud--three"></div>
+    <div class="hill hill--back"></div>
+    <div class="hill hill--front"></div>
+    <div class="sparkles" id="sparkles"></div>
+    <div class="grain"></div>
+  </div>
+
+  <!-- ── 欢迎页 ─────────────────────────────────────── -->
+  <section class="welcome" id="welcome" aria-labelledby="welcome-title">
+    <header class="topbar topbar--welcome">
+      <a class="brand" href="./" aria-label="Tree Book House 首页">
+        <span class="brand__mark"><img src="assets/brand/logo.webp" alt="" width="852" height="1100"></span>
+        <span class="brand__text">Tree Book House<small>树屋</small></span>
+      </a>
+      <p class="topbar__note">A LITTLE PHOTO GARDEN</p>
+    </header>
+
+    <div class="welcome__stage">
+      <div class="welcome__copy">
+        <p class="eyebrow"><span class="eyebrow__dot"></span> WELCOME TO MY TREE HOUSE</p>
+        <h1 id="welcome-title">欢迎来到<br><span class="script">树屋</span><span class="title-dot">。</span></h1>
+        <p class="lede">把喜欢的瞬间，藏在树叶和书页之间。<br>推开门，挑一张照片，把它的光带回家。</p>
+
+        <button class="door-button" id="enterButton" type="button">
+          <span class="door-button__art" aria-hidden="true">
+            <span class="mini-door">
+              <span class="mini-door__panel mini-door__panel--left"></span>
+              <span class="mini-door__panel mini-door__panel--right"></span>
+              <span class="mini-door__glow"></span>
+              <span class="mini-door__knob"></span>
+            </span>
+          </span>
+          <span class="door-button__text">
+            <strong>推开门</strong>
+            <small>去树屋里逛逛</small>
+          </span>
+          <span class="door-button__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </button>
+
+        <ul class="welcome__facts" aria-label="网站特点">
+          <li><span aria-hidden="true">✦</span> 手机 / 电脑自动适配</li>
+          <li><span aria-hidden="true">✦</span> 高清照片免费下载</li>
+        </ul>
+      </div>
+
+      <div class="welcome__art" aria-label="Tree Book House 标志">
+        <div class="art-halo art-halo--pink"></div>
+        <div class="art-halo art-halo--blue"></div>
+        <div class="logo-float">
+          <span class="orbit orbit--one" aria-hidden="true"></span>
+          <span class="orbit orbit--two" aria-hidden="true"></span>
+          <figure class="logo-card">
+            <span class="logo-card__tape" aria-hidden="true"></span>
+            <img src="assets/brand/logo.webp" alt="Tree Book House 树屋标志：彩虹棒棒糖上的树屋、一本打开的书和一朵微笑的小云" width="852" height="1100" fetchpriority="high">
+          </figure>
+          <span class="sticker sticker--welcome">WELCOME</span>
+          <span class="sticker sticker--open">OPEN<br>DAILY</span>
+          <span class="art-spark art-spark--one" aria-hidden="true">✦</span>
+          <span class="art-spark art-spark--two" aria-hidden="true">✧</span>
+          <span class="art-spark art-spark--three" aria-hidden="true">✦</span>
+        </div>
+        <p class="art-caption"><span></span> 推开那扇门，风里都是奶油味 <span></span></p>
+      </div>
+    </div>
+
+    <footer class="welcome__foot">
+      <span>EST. 2026 · MADE WITH LOVE</span>
+      <span class="welcome__foot-dot" aria-hidden="true"></span>
+      <span>照片会一直住在这里</span>
+    </footer>
+  </section>
+
+  <!-- ── 相册 ───────────────────────────────────────── -->
+  <div class="gallery-shell" id="galleryShell" hidden>
+    <header class="topbar topbar--gallery">
+      <a class="brand" href="./" aria-label="Tree Book House 首页">
+        <span class="brand__mark"><img src="assets/brand/logo.webp" alt="" width="852" height="1100"></span>
+        <span class="brand__text">Tree Book House<small>树屋</small></span>
+      </a>
+      <nav class="gallery-nav" aria-label="页面导航">
+        <a href="#collections" class="is-active">照片</a>
+        <a href="#about">关于</a>
+      </nav>
+      <a class="admin-key" href="admin.html" title="树屋管理" aria-label="树屋管理">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="15" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M11 12l8.5-8.5M16 7l2 2M13.5 9.5l2 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </a>
+    </header>
+
+    <main id="main">
+      <section class="gallery-hero" aria-labelledby="gallery-title">
+        <div class="gallery-hero__copy">
+          <p class="eyebrow"><span class="eyebrow__dot"></span> THE PHOTO COLLECTION</p>
+          <h1 id="gallery-title">树屋里的<span class="script">收藏</span></h1>
+          <p class="lede" id="galleryIntro">一些被光选中的瞬间，住在这里，也等你带走。</p>
+        </div>
+        <div class="gallery-hero__note">
+          <span class="gallery-hero__stamp" aria-hidden="true">TBH<small>PHOTO<br>ARCHIVE</small></span>
+          <p>慢慢逛，别着急。<br>点开照片，可以下载高清版本。</p>
+        </div>
+      </section>
+
+      <section class="collections" id="collections" aria-labelledby="gallery-title">
+        <div class="gallery-toolbar">
+          <div class="filters" id="filters" role="group" aria-label="按分组筛选照片"></div>
+          <p class="photo-count" id="photoCount" aria-live="polite"></p>
+        </div>
+        <div id="collectionsList" class="collections__list"></div>
+
+        <div class="empty-state" id="emptyState" hidden>
+          <div class="empty-state__art" aria-hidden="true">
+            <span class="empty-house"></span>
+            <span class="empty-cloud"></span>
+            <span class="empty-book"></span>
+          </div>
+          <h2>树屋还在等第一张照片</h2>
+          <p>去管理台上传照片吧，这里很快就会热闹起来。</p>
+          <a class="text-link" href="admin.html">打开树屋管理 <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="loading-state" id="loadingState">
+          <span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>
+          <p>正在推开树屋的门…</p>
+        </div>
+        <div class="error-state" id="errorState" hidden>
+          <h2>门卡住了</h2>
+          <p>照片暂时没有加载出来，请刷新页面再试一次。</p>
+          <button class="soft-button" type="button" onclick="location.reload()">重新加载</button>
+        </div>
+      </section>
+
+      <section class="about" id="about" aria-labelledby="about-title">
+        <div class="about__card">
+          <span class="about__kicker">ABOUT THIS LITTLE PLACE</span>
+          <h2 id="about-title">一间不打烊的<br><span class="script">树屋相册</span></h2>
+          <p>这里收藏着我喜欢的画面。你可以随意看看，也可以把喜欢的照片下载下来，留在自己的相册里。照片按心情分组，每一张都准备了轻巧版与高清版，还有一段会呼吸的动态背景。</p>
+          <p class="about__sign">— 来自树屋的主人</p>
+        </div>
+        <div class="about__aside" aria-hidden="true">
+          <div class="about__moon"></div>
+          <div class="about__flower about__flower--one"></div>
+          <div class="about__flower about__flower--two"></div>
+          <p>take a little<br>light with you.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__brand">
+        <img src="assets/brand/logo.webp" alt="" width="852" height="1100" loading="lazy">
+        <p>Tree Book House<small>把喜欢的瞬间，藏在树叶和书页之间。</small></p>
+      </div>
+      <div class="site-footer__meta">
+        <span>© <span id="year">2026</span> Tree Book House</span>
+        <a href="admin.html">树屋管理</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ── 照片查看器 ─────────────────────────────────── -->
+  <dialog class="lightbox" id="lightbox" aria-labelledby="lightboxTitle">
+    <div class="lightbox__shell">
+      <button class="lightbox__close" id="lightboxClose" type="button" aria-label="关闭照片查看器">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="lightbox__visual">
+        <div class="lightbox__media" id="lightboxMedia">
+          <img id="lightboxImage" alt="">
+          <video id="lightboxVideo" muted loop playsinline preload="metadata" aria-label="照片的动态循环预览"></video>
+          <div class="media-badge" id="mediaBadge"><span></span> LIVE PREVIEW</div>
+          <div class="media-hint" id="mediaHint">动态背景为静音循环预览</div>
+        </div>
+        <div class="lightbox__media-nav">
+          <button type="button" class="round-button" id="prevPhoto" aria-label="上一张照片">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span id="lightboxPosition">01 / 01</span>
+          <button type="button" class="round-button" id="nextPhoto" aria-label="下一张照片">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <aside class="lightbox__info">
+        <div class="lightbox__scroll">
+          <div class="lightbox__meta">
+            <span class="tag" id="lightboxGroup"></span>
+            <time id="lightboxDate"></time>
+          </div>
+          <h2 id="lightboxTitle"></h2>
+          <p class="lightbox__note" id="lightboxNote"></p>
+
+          <dl class="photo-facts">
+            <div><dt>原图尺寸</dt><dd id="factOriginal">—</dd></div>
+            <div><dt>照片分组</dt><dd id="factGroup">—</dd></div>
+          </dl>
+
+          <div class="downloads">
+            <p class="downloads__title">把这张照片带走 <span aria-hidden="true">↓</span></p>
+            <a class="download-card" id="downloadLarge" download>
+              <span class="download-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l4.5-4.5M12 15l-4.5-4.5M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="download-card__text"><strong>高清版</strong><small id="downloadLargeMeta">—</small></span>
+              <span class="download-card__arrow" aria-hidden="true">↓</span>
+            </a>
+            <a class="download-card" id="downloadWeb" download>
+              <span class="download-card__icon download-card__icon--blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l4.5-4.5M12 15l-4.5-4.5M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="download-card__text"><strong>轻巧版</strong><small id="downloadWebMeta">—</small></span>
+              <span class="download-card__arrow" aria-hidden="true">↓</span>
+            </a>
+            <a class="download-card download-card--video" id="downloadVideo" download hidden>
+              <span class="download-card__icon download-card__icon--pink" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M8 7.5v9l7-4.5-7-4.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><rect x="3" y="4" width="18" height="16" rx="4" stroke="currentColor" stroke-width="1.7"/></svg>
+              </span>
+              <span class="download-card__text"><strong>动态背景</strong><small id="downloadVideoMeta">—</small></span>
+              <span class="download-card__arrow" aria-hidden="true">↓</span>
+            </a>
+          </div>
+
+          <p class="download-note">点击即可下载 · 照片仅供个人收藏，请勿商用</p>
+        </div>
+      </aside>
+    </div>
+  </dialog>
+
+  <div class="doorway-overlay" id="doorwayOverlay" aria-hidden="true">
+    <div class="doorway-overlay__glow"></div>
+    <div class="doorway-overlay__panel doorway-overlay__panel--left"></div>
+    <div class="doorway-overlay__panel doorway-overlay__panel--right"></div>
+    <span class="doorway-overlay__seam"></span>
+  </div>
+
+  <noscript>
+    <div class="noscript">树屋需要 JavaScript 才能打开。请在浏览器设置中启用 JavaScript。</div>
+  </noscript>
+
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>

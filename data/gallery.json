@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-06",
+  "site": {
+    "title": "树屋",
+    "englishName": "Tree Book House",
+    "intro": "一些被光选中的瞬间，住在这里，也等你带走。"
+  },
+  "groups": [
+    {
+      "id": "treehouse-daily",
+      "name": "树屋日常",
+      "description": "午后、月光，和那些不想忘记的小事。"
+    },
+    {
+      "id": "sweet-things",
+      "name": "甜点时间",
+      "description": "草莓、汽水和一小块甜甜的空白。"
+    },
+    {
+      "id": "walk-and-picnic",
+      "name": "散步与野餐",
+      "description": "去有风的地方，把草地坐成家。"
+    }
+  ],
+  "photos": [
+    {
+      "id": "demo-treehouse",
+      "group": "treehouse-daily",
+      "title": "树屋的午后",
+      "date": "2026-10-24",
+      "original": {
+        "width": 1200,
+        "height": 1500
+      },
+      "variants": {
+        "large": {
+          "src": "media/demo/demo-treehouse/large.jpg",
+          "width": 1200,
+          "height": 1500,
+          "bytes": 72864,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/demo/demo-treehouse/web.jpg",
+          "width": 800,
+          "height": 1000,
+          "bytes": 26155,
+          "ext": "jpg"
+        }
+      },
+      "video": {
+        "src": "media/demo/demo-treehouse/loop.mp4",
+        "poster": "media/demo/demo-treehouse/poster.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 6,
+        "bytes": 485202,
+        "width": 768,
+        "height": 960
+      },
+      "note": "那天下午，阳光在树叶上停了很久。小房子、秋千，还有一本没有读完的书。"
+    },
+    {
+      "id": "demo-moonlight",
+      "group": "treehouse-daily",
+      "title": "月光书页",
+      "date": "2026-10-18",
+      "original": {
+        "width": 1200,
+        "height": 1500
+      },
+      "variants": {
+        "large": {
+          "src": "media/demo/demo-moonlight/large.jpg",
+          "width": 1200,
+          "height": 1500,
+          "bytes": 87476,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/demo/demo-moonlight/web.jpg",
+          "width": 800,
+          "height": 1000,
+          "bytes": 36370,
+          "ext": "jpg"
+        }
+      },
+      "video": {
+        "src": "media/demo/demo-moonlight/loop.mp4",
+        "poster": "media/demo/demo-moonlight/poster.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 6,
+        "bytes": 504984,
+        "width": 768,
+        "height": 960
+      },
+      "note": "月亮把书页照得发亮。有些故事，适合在夜里慢慢读。"
+    },
+    {
+      "id": "demo-soda",
+      "group": "sweet-things",
+      "title": "草莓汽水",
+      "date": "2026-10-11",
+      "original": {
+        "width": 1400,
+        "height": 1400
+      },
+      "variants": {
+        "large": {
+          "src": "media/demo/demo-soda/large.jpg",
+          "width": 1400,
+          "height": 1400,
+          "bytes": 76904,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/demo/demo-soda/web.jpg",
+          "width": 1000,
+          "height": 1000,
+          "bytes": 39057,
+          "ext": "jpg"
+        }
+      },
+      "video": {
+        "src": "media/demo/demo-soda/loop.mp4",
+        "poster": "media/demo/demo-soda/poster.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 6,
+        "bytes": 494325,
+        "width": 960,
+        "height": 960
+      },
+      "note": "草莓味的气泡一直往上跑，像一群小小的、透明的星星。"
+    },
+    {
+      "id": "demo-picnic",
+      "group": "walk-and-picnic",
+      "title": "云朵野餐",
+      "date": "2026-09-28",
+      "original": {
+        "width": 1600,
+        "height": 1200
+      },
+      "variants": {
+        "large": {
+          "src": "media/demo/demo-picnic/large.jpg",
+          "width": 1600,
+          "height": 1200,
+          "bytes": 106303,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/demo/demo-picnic/web.jpg",
+          "width": 1000,
+          "height": 750,
+          "bytes": 39531,
+          "ext": "jpg"
+        }
+      },
+      "video": {
+        "src": "media/demo/demo-picnic/loop.mp4",
+        "poster": "media/demo/demo-picnic/poster.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 6,
+        "bytes": 502162,
+        "width": 960,
+        "height": 720
+      },
+      "note": "云很低，草地很软。带了一本书、一壶茶，和一个什么都不做的下午。"
+    },
+    {
+      "id": "demo-forest",
+      "group": "walk-and-picnic",
+      "title": "森林散步",
+      "date": "2026-09-17",
+      "original": {
+        "width": 1200,
+        "height": 1500
+      },
+      "variants": {
+        "large": {
+          "src": "media/demo/demo-forest/large.jpg",
+          "width": 1200,
+          "height": 1500,
+          "bytes": 79175,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/demo/demo-forest/web.jpg",
+          "width": 800,
+          "height": 1000,
+          "bytes": 35619,
+          "ext": "jpg"
+        }
+      },
+      "video": {
+        "src": "media/demo/demo-forest/loop.mp4",
+        "poster": "media/demo/demo-forest/poster.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 6,
+        "bytes": 504148,
+        "width": 768,
+        "height": 960
+      },
+      "note": "沿着小路一直走，树影把时间拉得很长。尽头有一间小小的树屋。"
+    }
+  ]
+}
