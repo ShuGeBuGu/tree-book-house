@@ -11,8 +11,8 @@
   const QUEUE_MAX = 30;
   const LARGE_EDGE = 2560;
   const WEB_EDGE = 1280;
-  const VIDEO_EDGE = 1280;
-  const VIDEO_SECONDS = 6;
+  const VIDEO_MAX = 60 * 1024 * 1024;
+  const VIDEO_EXTENSIONS = new Set(['mp4', 'webm']);
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -46,7 +46,6 @@
     queueCount: $('#queueCount'),
     clearQueue: $('#clearQueue'),
     publishSettings: $('#publishSettings'),
-    videoToggle: $('#videoToggle'),
     publishSummary: $('#publishSummary'),
     publishButton: $('#publishButton'),
     progressWrap: $('#progressWrap'),
@@ -507,132 +506,137 @@
     return { blob, width, height };
   }
 
-  function pickRecorderMime() {
-    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return null;
-    const candidates = [
-      { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4', type: 'video/mp4' },
-      { mime: 'video/mp4', ext: 'mp4', type: 'video/mp4' },
-      { mime: 'video/webm;codecs=vp9', ext: 'webm', type: 'video/webm' },
-      { mime: 'video/webm;codecs=vp8', ext: 'webm', type: 'video/webm' },
-      { mime: 'video/webm', ext: 'webm', type: 'video/webm' },
-    ];
-    return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate.mime)) || null;
+  function isVideoFile(file) {
+    if (file.type === 'video/mp4' || file.type === 'video/webm') return true;
+    const ext = String(file.name || '').split('.').pop().toLowerCase();
+    return VIDEO_EXTENSIONS.has(ext);
   }
 
-  function drawLoopFrame(ctx, source, width, height, t) {
-    const cycle = 0.5 - 0.5 * Math.cos(Math.PI * 2 * t);
-    const scale = 1.035 + 0.045 * cycle;
-    const dw = width * scale;
-    const dh = height * scale;
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(source, (width - dw) / 2, (height - dh) / 2, dw, dh);
-
-    const gx = width * (0.18 + 0.64 * (0.5 - 0.5 * Math.cos(Math.PI * 2 * t + 0.7)));
-    const wash = ctx.createRadialGradient(gx, height * 0.26, 0, gx, height * 0.26, width * 0.82);
-    wash.addColorStop(0, 'rgba(255,249,220,0.19)');
-    wash.addColorStop(0.55, 'rgba(255,236,224,0.06)');
-    wash.addColorStop(1, 'rgba(255,240,230,0)');
-    ctx.fillStyle = wash;
-    ctx.fillRect(0, 0, width, height);
-
-    for (let i = 0; i < 14; i += 1) {
-      const seed = i * 1.618;
-      const fx = ((seed * 0.37 + t * (0.025 + (i % 4) * 0.006)) % 1.08) - 0.04;
-      const fy = 0.12 + ((seed * 0.71 + t * 0.018) % 0.8);
-      const r = width * (0.012 + (i % 5) * 0.005);
-      const alpha = 0.10 + 0.16 * (0.5 + 0.5 * Math.sin(Math.PI * 2 * (t + i * 0.17)));
-      const bokeh = ctx.createRadialGradient(fx * width, fy * height, 0, fx * width, fy * height, r * 3);
-      bokeh.addColorStop(0, `rgba(255,248,214,${alpha.toFixed(3)})`);
-      bokeh.addColorStop(1, 'rgba(255,248,214,0)');
-      ctx.fillStyle = bokeh;
-      ctx.beginPath();
-      ctx.arc(fx * width, fy * height, r * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const vignette = ctx.createRadialGradient(
-      width / 2, height / 2, Math.min(width, height) * 0.3,
-      width / 2, height / 2, Math.max(width, height) * 0.72,
-    );
-    vignette.addColorStop(0, 'rgba(90,55,42,0)');
-    vignette.addColorStop(1, 'rgba(90,55,42,0.11)');
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, width, height);
+  function isImageFile(file) {
+    if (file.type.startsWith('image/')) return true;
+    return /\.(jpe?g|png|webp|avif)$/i.test(String(file.name || ''));
   }
 
-  async function makeLoopVideo(source) {
-    const codec = pickRecorderMime();
-    if (!codec) {
-      throw new Error('当前浏览器不支持生成视频。请使用最新版 Chrome、Edge 或 Safari 再试。');
-    }
-    if (document.hidden) {
-      throw new Error('请让这个页面保持在前台，再开始生成视频。');
-    }
-    const src = sourceSize(source);
-    let width = src.width;
-    let height = src.height;
-    if (width >= height) {
-      width = Math.min(VIDEO_EDGE, width);
-      height = Math.round(src.height * (width / src.width));
-    } else {
-      height = Math.min(VIDEO_EDGE, height);
-      width = Math.round(src.width * (height / src.height));
-    }
-    width = Math.max(2, Math.round(width / 2) * 2);
-    height = Math.max(2, Math.round(height / 2) * 2);
+  function videoExtension(file) {
+    const ext = String(file.name || '').split('.').pop().toLowerCase();
+    return VIDEO_EXTENSIONS.has(ext) ? ext : '';
+  }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false });
-    drawLoopFrame(ctx, source, width, height, 0);
-    const stream = canvas.captureStream(24);
-    const bitrate = Math.min(2_800_000, Math.max(900_000, Math.round(width * height * 24 * 0.072)));
-    const recorder = new MediaRecorder(stream, { mimeType: codec.mime, videoBitsPerSecond: bitrate });
-    const chunks = [];
-    const blob = await new Promise((resolve, reject) => {
-      let finished = false;
-      const timeout = window.setTimeout(() => {
-        if (finished) return;
-        finished = true;
-        try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
-        stream.getTracks().forEach((track) => track.stop());
-        reject(new Error('视频生成超时，请重试或关闭“自动生成动态背景视频”。'));
-      }, 15000);
+  async function readVideoMetadata(file) {
+    const ext = videoExtension(file);
+    if (!ext) throw new Error('视频请使用 MP4 或 WebM 格式。');
+    if (file.type && !['video/mp4', 'video/webm'].includes(file.type)) {
+      throw new Error('这个视频的浏览器格式不是 MP4 / WebM，请先转换成 MP4 再上传。');
+    }
+    if (file.size > VIDEO_MAX) {
+      throw new Error(`视频超过 ${Math.round(VIDEO_MAX / 1024 / 1024)} MB，请压缩后再上传。`);
+    }
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.muted = true;
+      video.playsInline = true;
+      video.src = objectUrl;
+      await new Promise((resolve, reject) => {
+        video.addEventListener('loadedmetadata', resolve, { once: true });
+        video.addEventListener('error', () => reject(new Error('无法读取这个视频，可能是编码格式不受支持。')), { once: true });
+      });
+      return {
+        file,
+        name: file.name,
+        ext,
+        type: ext === 'webm' ? 'video/webm' : 'video/mp4',
+        bytes: file.size,
+        width: video.videoWidth || null,
+        height: video.videoHeight || null,
+        seconds: Number.isFinite(video.duration) ? Math.round(video.duration * 10) / 10 : null,
+      };
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
 
-      recorder.ondataavailable = (event) => { if (event.data && event.data.size) chunks.push(event.data); };
-      recorder.onerror = (event) => {
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(timeout);
-        stream.getTracks().forEach((track) => track.stop());
-        reject(event.error || new Error('视频生成失败。'));
-      };
-      recorder.onstop = () => {
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(timeout);
-        stream.getTracks().forEach((track) => track.stop());
-        resolve(new Blob(chunks, { type: codec.type }));
-      };
+  function videoFileBase(name) {
+    return String(name || '').replace(/\.[^.]+$/, '').trim().toLowerCase();
+  }
 
-      const startedAt = performance.now();
-      recorder.start(200);
-      const tick = (now) => {
-        const progress = Math.min(1, (now - startedAt) / (VIDEO_SECONDS * 1000));
-        drawLoopFrame(ctx, source, width, height, progress);
-        if (progress < 1) {
-          requestAnimationFrame(tick);
-        } else {
-          window.setTimeout(() => {
-            if (recorder.state !== 'inactive') recorder.stop();
-          }, 90);
-        }
-      };
-      requestAnimationFrame(tick);
+  async function attachVideoToItem(item, file) {
+    const meta = await readVideoMetadata(file);
+    item.video = meta;
+    item.statusText = item.status === 'waiting' ? '已附带动态视频，等待发布' : item.statusText;
+    const li = $(`.queue-item[data-key="${esc(item.key)}"]`, els.queueList);
+    if (li) renderQueueVideo(item, li);
+    return meta;
+  }
+
+  function pickVideoForItem(item) {
+    if (state.busy) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/mp4,video/webm';
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const meta = await attachVideoToItem(item, file);
+        updateQueueItem(item);
+        updatePublishSummary();
+        toast(`已附加视频「${meta.name}」`);
+      } catch (error) {
+        toast(error.message || '视频添加失败', 'error');
+      }
     });
+    input.click();
+  }
 
-    return { blob, ext: codec.ext, type: codec.type, width, height, seconds: VIDEO_SECONDS };
+  function removeItemVideo(item) {
+    if (state.busy) return;
+    item.video = null;
+    item.statusText = item.status === 'waiting' ? '等待发布' : item.statusText;
+    const li = $(`.queue-item[data-key="${esc(item.key)}"]`, els.queueList);
+    if (li) renderQueueVideo(item, li);
+    updateQueueItem(item);
+    updatePublishSummary();
+    toast('已移除这张照片的动态视频');
+  }
+
+  function renderQueueVideo(item, li) {
+    const wrap = $('.queue-video', li);
+    if (!wrap) return;
+    wrap.textContent = '';
+    if (item.video) {
+      const chip = document.createElement('span');
+      chip.className = 'queue-video-chip';
+      const detail = [formatBytes(item.video.bytes), item.video.seconds ? `${item.video.seconds} 秒` : ''].filter(Boolean).join(' · ');
+      chip.title = `${item.video.name} · ${detail}`;
+      chip.innerHTML = '<span aria-hidden="true">▸</span>';
+      const name = document.createElement('span');
+      name.className = 'queue-video-chip__name';
+      name.textContent = item.video.name;
+      const meta = document.createElement('small');
+      meta.textContent = detail;
+      chip.append(name, meta);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'queue-video-clear';
+      remove.setAttribute('aria-label', `移除视频 ${item.video.name}`);
+      remove.textContent = '×';
+      remove.addEventListener('click', () => removeItemVideo(item));
+      const replace = document.createElement('button');
+      replace.type = 'button';
+      replace.className = 'queue-video-replace';
+      replace.textContent = '更换';
+      replace.addEventListener('click', () => pickVideoForItem(item));
+      wrap.append(chip, replace, remove);
+    } else {
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'queue-video-add';
+      add.innerHTML = '<span aria-hidden="true">＋</span> 添加动态视频（可选）';
+      add.addEventListener('click', () => pickVideoForItem(item));
+      wrap.appendChild(add);
+    }
   }
 
   function photoId() {
@@ -671,14 +675,16 @@
     const meta = document.createElement('p');
     meta.className = 'queue-meta';
     meta.textContent = `${item.file.name} · ${item.width && item.height ? `${item.width} × ${item.height}` : '读取尺寸中…'} · ${formatBytes(item.file.size)}`;
+    const videoRow = document.createElement('div');
+    videoRow.className = 'queue-video';
     const status = document.createElement('p');
     status.className = 'queue-status';
-    status.textContent = '等待生成';
+    status.textContent = item.statusText || '等待发布';
     const progress = document.createElement('div');
     progress.className = 'queue-progress';
     const bar = document.createElement('span');
     progress.appendChild(bar);
-    main.append(row, meta, status, progress);
+    main.append(row, meta, videoRow, status, progress);
 
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -688,6 +694,7 @@
     remove.addEventListener('click', () => removeQueueItem(item.key));
 
     li.append(thumb, main, remove);
+    renderQueueVideo(item, li);
     return li;
   }
 
@@ -707,7 +714,7 @@
     li.classList.toggle('is-done', item.status === 'done');
     li.classList.toggle('is-error', item.status === 'error');
     const status = $('.queue-status', li);
-    if (status) status.textContent = item.statusText || '等待生成';
+    if (status) status.textContent = item.statusText || '等待发布';
     const bar = $('.queue-progress span', li);
     if (bar) bar.style.width = `${Math.round(item.progress || 0)}%`;
     const meta = $('.queue-meta', li);
@@ -724,9 +731,6 @@
     els.publishSettings.hidden = !hasQueue && !showingSuccess;
     if (!hasQueue && showingSuccess) {
       els.publishButton.disabled = true;
-      els.videoToggle.disabled = true;
-    } else if (hasQueue) {
-      els.videoToggle.disabled = state.busy;
     }
     els.publishButton.disabled = state.busy || !state.connected || !hasQueue;
   }
@@ -742,10 +746,12 @@
       return;
     }
     const total = state.queue.reduce((sum, item) => sum + item.file.size, 0);
+    const videos = state.queue.filter((item) => item.video).length;
     const group = els.groupSelect.value === '__new__'
       ? (els.newGroupName.value.trim() || '新分组')
       : (state.manifest?.groups || []).find((item) => String(item.id) === els.groupSelect.value)?.name || '分组';
-    els.publishSummary.innerHTML = `<strong>${state.queue.length} 张照片</strong> · ${formatBytes(total)} 原始文件 · 将放入「${escapeHtml(group)}」`;
+    const videoText = videos ? ` · ${videos} 个视频` : '';
+    els.publishSummary.innerHTML = `<strong>${state.queue.length} 张照片</strong>${videoText} · ${formatBytes(total)} 原始文件 · 将放入「${escapeHtml(group)}」`;
   }
 
   function escapeHtml(text) {
@@ -759,20 +765,22 @@
     }
     const files = [...fileList];
     if (!files.length) return;
-    if (state.queue.length >= QUEUE_MAX) {
+    const images = files.filter(isImageFile);
+    const videos = files.filter(isVideoFile);
+    const unsupported = files.filter((file) => !isImageFile(file) && !isVideoFile(file));
+    unsupported.forEach((file) => toast(`${file.name} 不是支持的照片或视频格式，已跳过`, 'error'));
+    if (!images.length && !videos.length) return;
+    if (images.length && state.queue.length >= QUEUE_MAX) {
       toast(`一次最多处理 ${QUEUE_MAX} 张照片`, 'error');
       return;
     }
+
     state.lastPublish = null;
-    const remaining = QUEUE_MAX - state.queue.length;
-    const accepted = files.slice(0, remaining);
-    if (files.length > remaining) toast(`一次最多 ${QUEUE_MAX} 张，多出的照片没有加入`, 'error');
+    const capacity = QUEUE_MAX - state.queue.length;
+    const acceptedImages = images.slice(0, capacity);
+    if (images.length > capacity) toast(`一次最多 ${QUEUE_MAX} 张，多出的照片没有加入`, 'error');
     let added = 0;
-    for (const file of accepted) {
-      if (!file.type.startsWith('image/')) {
-        toast(`${file.name} 不是图片文件，已跳过`, 'error');
-        continue;
-      }
+    for (const file of acceptedImages) {
       if (file.size > IMAGE_MAX) {
         toast(`${file.name} 超过 40 MB，已跳过`, 'error');
         continue;
@@ -804,18 +812,40 @@
         width: size.width,
         height: size.height,
         thumbUrl: URL.createObjectURL(file),
+        video: null,
         status: 'waiting',
-        statusText: '等待生成',
+        statusText: '等待发布',
         progress: 0,
       };
       state.queue.push(item);
       added += 1;
     }
+
+    // Pair selected videos with photos that share the same base file name.
+    let paired = 0;
+    for (const file of videos) {
+      const base = videoFileBase(file.name);
+      const target = state.queue.find((item) => videoFileBase(item.file.name) === base);
+      if (!target) {
+        toast(`视频「${file.name}」没有找到同名照片，请在该照片下单独添加`, 'error');
+        continue;
+      }
+      try {
+        await attachVideoToItem(target, file);
+        paired += 1;
+      } catch (error) {
+        toast(`视频「${file.name}」：${error.message || '无法读取'}`, 'error');
+      }
+    }
+
     els.fileInput.value = '';
-    if (added) {
+    if (added || paired) {
       resetPublishOutput();
       renderQueue();
-      toast(added === 1 ? '照片已加入，准备生成' : `${added} 张照片已加入`);
+      const parts = [];
+      if (added) parts.push(`${added} 张照片`);
+      if (paired) parts.push(`${paired} 个动态视频`);
+      toast(`${parts.join('、')}已加入，等待发布`);
     }
   }
 
@@ -899,15 +929,6 @@
 
   async function publish() {
     if (state.busy || !state.connected || !state.queue.length) return;
-    if (!els.videoToggle.checked) {
-      const proceed = await confirmAction({
-        title: '不生成动态视频吗？',
-        text: '关闭后，这次发布的照片将没有动态预览，也没有视频下载链接。建议保持开启。',
-        okText: '仍然发布',
-        danger: false,
-      });
-      if (!proceed) return;
-    }
     state.busy = true;
     state.lastPublish = null;
     els.publishButton.classList.add('is-loading');
@@ -916,16 +937,12 @@
     els.fileInput.disabled = true;
     els.refreshButton.disabled = true;
     els.clearQueue.disabled = true;
-    els.videoToggle.disabled = true;
     els.publishLog.textContent = '';
     els.progressWrap.hidden = false;
     setOverallProgress(1, '正在检查仓库的最新状态…');
     let group;
     try {
       group = resolveGroupForPublish();
-      if (els.videoToggle.checked && !pickRecorderMime()) {
-        throw new Error('这个浏览器不支持生成 WebM / MP4 视频。请使用最新版 Chrome、Edge 或 Safari。');
-      }
       await fetchRepositoryState();
       renderGroupOptions();
       // resolve again in case the group already exists remotely
@@ -970,39 +987,34 @@
           item.statusText = '高清版完成，正在压缩轻巧版…';
           updateQueueItem(item);
           const web = await makeJpegVariant(source, WEB_EDGE, 0.84);
-          item.progress = 45;
-          item.statusText = '图片准备好了，正在生成动态视频…';
+          item.progress = 48;
+          item.statusText = '图片准备好了，正在上传…';
           updateQueueItem(item);
-          setOverallProgress(itemBase + itemSpan * 0.42, `第 ${index + 1} / ${total} 张：正在生成循环视频`);
+          setOverallProgress(itemBase + itemSpan * 0.45, `第 ${index + 1} / ${total} 张：正在上传图片`);
+
+          await uploadBuffer(`${folder}/large.jpg`, large.blob, treeEntries);
+          item.progress = 68;
+          updateQueueItem(item);
+          await uploadBuffer(`${folder}/web.jpg`, web.blob, treeEntries);
+          item.progress = 79;
+          updateQueueItem(item);
 
           let videoMeta = null;
-          if (els.videoToggle.checked) {
-            const video = await makeLoopVideo(source);
+          if (item.video) {
+            item.statusText = '正在上传你的动态视频…';
+            updateQueueItem(item);
+            const videoSrc = `${folder}/loop.${item.video.ext}`;
+            await uploadBuffer(videoSrc, item.video.file, treeEntries);
             videoMeta = {
-              src: `${folder}/loop.${video.ext}`,
+              src: videoSrc,
               poster: `${folder}/web.jpg`,
-              type: video.type,
-              ext: video.ext,
-              seconds: video.seconds,
-              bytes: video.blob.size,
-              width: video.width,
-              height: video.height,
+              type: item.video.type,
+              ext: item.video.ext,
+              seconds: item.video.seconds,
+              bytes: item.video.bytes,
+              width: item.video.width,
+              height: item.video.height,
             };
-            item.progress = 68;
-            item.statusText = '视频完成，正在上传…';
-            updateQueueItem(item);
-            await uploadBuffer(`${folder}/large.jpg`, large.blob, treeEntries);
-            item.progress = 78;
-            updateQueueItem(item);
-            await uploadBuffer(`${folder}/web.jpg`, web.blob, treeEntries);
-            item.progress = 86;
-            updateQueueItem(item);
-            await uploadBuffer(videoMeta.src, video.blob, treeEntries);
-          } else {
-            await uploadBuffer(`${folder}/large.jpg`, large.blob, treeEntries);
-            item.progress = 76;
-            updateQueueItem(item);
-            await uploadBuffer(`${folder}/web.jpg`, web.blob, treeEntries);
           }
 
           item.progress = 93;
@@ -1107,8 +1119,6 @@
       els.fileInput.disabled = false;
       els.refreshButton.disabled = false;
       els.clearQueue.disabled = false;
-      els.videoToggle.disabled = false;
-      els.videoToggle.checked = true;
       refreshPublishVisibility();
     } catch (error) {
       const message = humanError(error);
@@ -1126,7 +1136,7 @@
       const processing = state.queue.find((item) => item.status === 'processing');
       if (processing) {
         processing.status = 'error';
-        processing.statusText = '生成或上传失败';
+        processing.statusText = '处理或上传失败';
         updateQueueItem(processing);
       }
       els.progressLabel.textContent = '发布没有完成，请检查后重试';
@@ -1144,7 +1154,6 @@
     els.fileInput.disabled = false;
     els.refreshButton.disabled = false;
     els.clearQueue.disabled = false;
-    els.videoToggle.disabled = false;
     refreshPublishVisibility();
   }
 
@@ -1318,7 +1327,7 @@
 
       const treeEntries = [...deletePaths].map((path) => ({ path, mode: '100644', type: 'blob', sha: null }));
       const manifestBlob = new Blob([JSON.stringify(updated, null, 2)], { type: 'application/json' });
-      const manifestSha = await apiCreateBlob(manifestBlob);
+      const manifestSha = (await apiCreateBlob(manifestBlob)).sha;
       treeEntries.push({ path: 'data/gallery.json', mode: '100644', type: 'blob', sha: manifestSha });
       const tree = await api(`${repoApiPath()}/git/trees`, {
         method: 'POST',

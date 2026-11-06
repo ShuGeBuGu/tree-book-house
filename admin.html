@@ -34,7 +34,7 @@
       <div class="admin-hero__copy">
         <p class="admin-eyebrow"><span></span> THE KEEPER'S DESK</p>
         <h1>把新的光，<br>放进<span class="admin-script">树屋</span>。</h1>
-        <p class="admin-lede">选好照片，取一个分组名，剩下的交给这里。<br>会自动生成两个尺寸和一段会呼吸的循环视频。</p>
+        <p class="admin-lede">选好照片，取一个分组名，剩下的交给这里。<br>会自动压缩两个尺寸；动态视频由你上传。</p>
         <div class="admin-hero__chips">
           <span>自动识别分辨率</span>
           <span>自动压缩</span>
@@ -83,9 +83,9 @@
           <input id="branchInput" name="branch" type="text" value="main" spellcheck="false" autocapitalize="off">
         </div>
         <div class="field field--token">
-          <label for="tokenInput">Fine-grained Token <span>仅限此仓库 Contents 读写</span></label>
+          <label for="tokenInput">GitHub Token <span>Fine-grained 或 Classic 均可</span></label>
           <div class="token-wrap">
-            <input id="tokenInput" name="token" type="password" placeholder="github_pat_..." spellcheck="false" autocapitalize="off">
+            <input id="tokenInput" name="token" type="password" placeholder="github_pat_... 或 ghp_..." spellcheck="false" autocapitalize="off">
             <button type="button" class="token-toggle" id="tokenToggle" aria-label="显示 Token">显示</button>
           </div>
         </div>
@@ -107,6 +107,7 @@
       <details class="setup-help">
         <summary>怎么创建 Token？<span aria-hidden="true">＋</span></summary>
         <div class="setup-help__body">
+          <p class="setup-help__lead">Classic Token 只需勾选 <code>public_repo</code>；想使用更细粒度的权限时，可以按下面步骤创建 Fine-grained Token。</p>
           <ol>
             <li>打开 GitHub → 右上角头像 → <strong>Settings</strong> → <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong>。</li>
             <li>点击 <strong>Generate new token</strong>，Repository access 选择 <strong>Only select repositories</strong>，只勾选你的网站仓库。</li>
@@ -124,7 +125,7 @@
         <span class="admin-panel__num">02</span>
         <div>
           <h2 id="uploadTitle">把照片放进树屋</h2>
-          <p>支持 JPG、PNG、WebP；一次可以选择多张。</p>
+          <p>支持 JPG / PNG / WebP，可同时选择自己的 MP4 / WebM 视频。</p>
         </div>
         <span class="panel-state" id="uploadState">连接后可用</span>
       </div>
@@ -156,8 +157,8 @@
           </div>
         </div>
 
-        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-controls="fileInput" aria-label="选择或拖入照片">
-          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple hidden>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-controls="fileInput" aria-label="选择或拖入照片和视频">
+          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple hidden>
           <div class="dropzone__art" aria-hidden="true">
             <span class="dropzone__sun"></span>
             <span class="dropzone__hill"></span>
@@ -166,7 +167,7 @@
           </div>
           <p class="dropzone__title">把照片拖到这里</p>
           <p class="dropzone__hint">或者 <span>点击选择文件</span> · 建议每次 1–20 张</p>
-          <p class="dropzone__note">照片只会在你的浏览器里处理，处理完才会上传到仓库</p>
+          <p class="dropzone__note">可以同时选择同名视频自动配对，也可以在下方为每张照片单独添加</p>
         </div>
 
         <div class="queue" id="queueWrap" hidden>
@@ -180,14 +181,10 @@
         <div class="publish-settings" id="publishSettings" hidden>
           <div class="setting-row">
             <div class="setting-copy">
-              <strong>自动生成动态背景视频</strong>
-              <span>6 秒静音循环，会随高清/轻量图片一起生成。适合点击照片后的动态预览。</span>
+              <strong>动态背景视频由你自己上传</strong>
+              <span>为照片附加自己的 MP4 / WebM，它会作为循环预览和视频下载。网站不会自动生成或重编码视频；建议单个视频小于 60 MB。</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="videoToggle" checked>
-              <span class="switch__track" aria-hidden="true"><span></span></span>
-              <span class="sr-only">自动生成动态背景视频</span>
-            </label>
+            <span class="video-self-badge">SELF-HOSTED</span>
           </div>
           <div class="setting-row setting-row--summary">
             <div class="publish-summary" id="publishSummary">还没有添加照片</div>
