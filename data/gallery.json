@@ -25,43 +25,6 @@
   ],
   "photos": [
     {
-      "id": "demo-treehouse",
-      "group": "treehouse-daily",
-      "title": "树屋的午后",
-      "date": "2026-10-24",
-      "original": {
-        "width": 1200,
-        "height": 1500
-      },
-      "variants": {
-        "large": {
-          "src": "media/demo/demo-treehouse/large.jpg",
-          "width": 1200,
-          "height": 1500,
-          "bytes": 72864,
-          "ext": "jpg"
-        },
-        "web": {
-          "src": "media/demo/demo-treehouse/web.jpg",
-          "width": 800,
-          "height": 1000,
-          "bytes": 26155,
-          "ext": "jpg"
-        }
-      },
-      "video": {
-        "src": "media/demo/demo-treehouse/loop.mp4",
-        "poster": "media/demo/demo-treehouse/poster.jpg",
-        "type": "video/mp4",
-        "ext": "mp4",
-        "seconds": 6,
-        "bytes": 485202,
-        "width": 768,
-        "height": 960
-      },
-      "note": "那天下午，阳光在树叶上停了很久。小房子、秋千，还有一本没有读完的书。"
-    },
-    {
       "id": "demo-moonlight",
       "group": "treehouse-daily",
       "title": "月光书页",
