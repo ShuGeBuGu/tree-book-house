@@ -8,6 +8,9 @@
   const API = 'https://api.github.com';
   const CONFIG_KEY = 'tbh-admin-config-v1';
   const IMAGE_MAX = 80 * 1024 * 1024;
+  const PREVIEW_EDGE = 1280;
+  const PREVIEW_QUALITY = 0.82;
+  const VIDEO_PREVIEW_BITRATE = 2_000_000;
   const QUEUE_MAX = 30;
   const VIDEO_MAX = 60 * 1024 * 1024;
   const VIDEO_EXTENSIONS = new Set(['mp4', 'webm']);
@@ -494,6 +497,128 @@
       width: source.width || source.naturalWidth || 0,
       height: source.height || source.naturalHeight || 0,
     };
+  }
+
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('预览图生成失败，请重试。'));
+      }, type, quality);
+    });
+  }
+
+  async function makePreviewImage(source) {
+    const src = sourceSize(source);
+    if (!src.width || !src.height) throw new Error('无法读取这张图片的尺寸。');
+    const scale = Math.min(1, PREVIEW_EDGE / Math.max(src.width, src.height));
+    const width = Math.max(1, Math.round(src.width * scale));
+    const height = Math.max(1, Math.round(src.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#fff8ef';
+    ctx.fillRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, 0, 0, width, height);
+    const blob = await canvasToBlob(canvas, 'image/jpeg', PREVIEW_QUALITY);
+    return { blob, width, height };
+  }
+
+  async function makeVideoPreview(file, meta) {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return null;
+    const srcWidth = Number(meta.width) || 0;
+    const srcHeight = Number(meta.height) || 0;
+    if (!srcWidth || !srcHeight) return null;
+    if (Math.max(srcWidth, srcHeight) <= PREVIEW_EDGE) return null;
+
+    const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+      .find((type) => MediaRecorder.isTypeSupported(type));
+    if (!mime) return null;
+
+    const scale = PREVIEW_EDGE / Math.max(srcWidth, srcHeight);
+    const width = Math.max(2, Math.round((srcWidth * scale) / 2) * 2);
+    const height = Math.max(2, Math.round((srcHeight * scale) / 2) * 2);
+    const objectUrl = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.src = objectUrl;
+
+    try {
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = () => reject(new Error('无法读取动态壁纸视频。'));
+      });
+      const duration = Number.isFinite(video.duration) && video.duration > 0
+        ? video.duration
+        : Number(meta.seconds) || 0;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, width, height);
+      const stream = canvas.captureStream(30);
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mime,
+        videoBitsPerSecond: VIDEO_PREVIEW_BITRATE,
+      });
+      const chunks = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) chunks.push(event.data);
+      };
+      const stopped = new Promise((resolve, reject) => {
+        recorder.onstop = resolve;
+        recorder.onerror = () => reject(new Error('动态壁纸预览生成失败。'));
+      });
+      recorder.start(250);
+      try {
+        await video.play();
+        await new Promise((resolve) => {
+          let finished = false;
+          const finish = () => {
+            if (finished) return;
+            finished = true;
+            resolve();
+          };
+          const draw = () => {
+            if (video.ended || (duration && video.currentTime >= duration - 0.03)) {
+              finish();
+              return;
+            }
+            ctx.drawImage(video, 0, 0, width, height);
+            if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(draw);
+            else requestAnimationFrame(draw);
+          };
+          draw();
+          window.setTimeout(finish, Math.max(3000, (duration + 2) * 1000));
+        });
+      } finally {
+        video.pause();
+        if (recorder.state !== 'inactive') recorder.stop();
+        await stopped;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      if (blob.size < 2000) return null;
+      return {
+        blob,
+        width,
+        height,
+        seconds: Math.round(duration * 10) / 10,
+        type: 'video/webm',
+        ext: 'webm',
+      };
+    } finally {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(objectUrl);
+    }
   }
 
   function extensionOf(file) {
@@ -1046,9 +1171,26 @@
 
         item.status = 'processing';
         item.progress = 4;
+        item.statusText = '正在生成 720P 静图预览…';
+        updateQueueItem(item);
+        setOverallProgress(itemBase + itemSpan * 0.04, `第 ${index + 1} / ${total} 张：正在生成预览`);
+
+        let previewImage = null;
+        try {
+          const source = await decodeImage(large.file);
+          try {
+            previewImage = await makePreviewImage(source);
+          } finally {
+            if (source.close) source.close();
+          }
+        } catch (_) {
+          previewImage = null;
+        }
+
+        item.progress = 12;
         item.statusText = '正在上传高清版…';
         updateQueueItem(item);
-        setOverallProgress(itemBase + itemSpan * 0.04, `第 ${index + 1} / ${total} 张：正在上传高清版`);
+        setOverallProgress(itemBase + itemSpan * 0.1, `第 ${index + 1} / ${total} 张：正在上传高清版`);
 
         await uploadBuffer(`${folder}/large.${large.ext}`, large.file, treeEntries);
         item.progress = 42;
@@ -1057,14 +1199,31 @@
         setOverallProgress(itemBase + itemSpan * 0.4, `第 ${index + 1} / ${total} 张：正在上传轻巧版`);
 
         await uploadBuffer(`${folder}/web.${web.ext}`, web.file, treeEntries);
-        item.progress = 74;
+        item.progress = 68;
+        updateQueueItem(item);
+
+        let previewMeta = null;
+        if (previewImage) {
+          item.statusText = '正在上传 720P 静图预览…';
+          updateQueueItem(item);
+          const previewSrc = `${folder}/preview.jpg`;
+          await uploadBuffer(previewSrc, previewImage.blob, treeEntries);
+          previewMeta = {
+            src: previewSrc,
+            width: previewImage.width,
+            height: previewImage.height,
+            bytes: previewImage.blob.size,
+            ext: 'jpg',
+          };
+        }
+        item.progress = 76;
         updateQueueItem(item);
 
         let videoMeta = null;
         if (wallpaper) {
           item.statusText = '正在上传动态壁纸…';
           updateQueueItem(item);
-          setOverallProgress(itemBase + itemSpan * 0.7, `第 ${index + 1} / ${total} 张：正在上传动态壁纸`);
+          setOverallProgress(itemBase + itemSpan * 0.72, `第 ${index + 1} / ${total} 张：正在上传动态壁纸`);
           const videoSrc = `${folder}/wallpaper.${wallpaper.ext}`;
           await uploadBuffer(videoSrc, wallpaper.file, treeEntries);
           videoMeta = {
@@ -1079,6 +1238,32 @@
           };
         }
 
+        if (wallpaper && Math.max(wallpaper.width || 0, wallpaper.height || 0) > PREVIEW_EDGE) {
+          item.statusText = '正在生成 720P 动态预览…';
+          updateQueueItem(item);
+          try {
+            const generated = await makeVideoPreview(wallpaper.file, wallpaper);
+            if (generated) {
+              const previewSrc = `${folder}/video-preview.webm`;
+              await uploadBuffer(previewSrc, generated.blob, treeEntries);
+              videoMeta = {
+                ...videoMeta,
+                preview: {
+                  src: previewSrc,
+                  width: generated.width,
+                  height: generated.height,
+                  seconds: generated.seconds,
+                  bytes: generated.blob.size,
+                  type: 'video/webm',
+                  ext: 'webm',
+                },
+              };
+            }
+          } catch (_) {
+            // The original video remains the fallback when a preview cannot be encoded.
+          }
+        }
+
         item.progress = 94;
         item.statusText = '上传完成';
         updateQueueItem(item);
@@ -1090,6 +1275,7 @@
           note: String(item.note || '').trim(),
           date: todayISO(),
           original: { width: large.width, height: large.height },
+          ...(previewMeta ? { preview: previewMeta } : {}),
           variants: {
             large: {
               src: `${folder}/large.${large.ext}`,
@@ -1220,7 +1406,9 @@
   /* ---------------- manage ---------------- */
   function mediaBytes(photo) {
     return ['large', 'web'].reduce((sum, key) => sum + (Number(photo.variants?.[key]?.bytes) || 0), 0)
-      + (Number(photo.video?.bytes) || 0);
+      + (Number(photo.preview?.bytes) || 0)
+      + (Number(photo.video?.bytes) || 0)
+      + (Number(photo.video?.preview?.bytes) || 0);
   }
 
   function renderManage() {
@@ -1385,7 +1573,11 @@
             const src = photo.variants?.[key]?.src;
             if (src) deletePaths.add(src);
           });
+          if (photo.preview?.src) deletePaths.add(photo.preview.src);
           if (photo.video?.src) deletePaths.add(photo.video.src);
+          if (photo.video?.preview?.src && photo.video.preview.src !== photo.video.src) {
+            deletePaths.add(photo.video.preview.src);
+          }
           if (photo.video?.poster && !deletePaths.has(photo.video.poster)) {
             // Only delete a poster if it is unique to this photo.
             const usedElsewhere = remainingPhotos.some((other) => other.video?.poster === photo.video.poster);

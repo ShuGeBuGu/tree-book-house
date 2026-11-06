@@ -43,7 +43,7 @@
     downloadVideoMeta: $('#downloadVideoMeta'),
     prevPhoto: $('#prevPhoto'),
     nextPhoto: $('#nextPhoto'),
-    lightboxPosition: $('#lightboxPosition'),
+    mediaNav: $('#lightboxMediaNav'),
     year: $('#year'),
   };
 
@@ -54,6 +54,7 @@
     visiblePhotos: [],
     currentId: null,
     lastTrigger: null,
+    mediaMode: 'image',
     filter: 'all',
     entered: false,
     pendingDeepLink: null,
@@ -272,7 +273,7 @@
       video.loop = true;
       video.playsInline = true;
       video.preload = 'none';
-      video.dataset.src = photo.video.src;
+      video.dataset.src = photo.video.preview?.src || photo.video.src;
       if (photo.video.poster) video.poster = photo.video.poster;
       video.setAttribute('aria-hidden', 'true');
       video.addEventListener('playing', () => video.classList.add('is-playing'));
@@ -520,7 +521,6 @@
 
     if (!els.lightbox.open) els.lightbox.showModal();
     requestAnimationFrame(() => els.lightbox.classList.add('is-open'));
-    updateNav();
   }
 
   function fillLightbox(photo) {
@@ -528,7 +528,7 @@
     const large = photo.variants?.large || photo.variants?.web || null;
     const web = photo.variants?.web || large;
     const original = photo.original || large || {};
-    const imageVariant = large || web;
+    const imageVariant = photo.preview || large || web;
     const hasVideo = Boolean(photo.video?.src);
 
     els.lightboxImage.src = imageVariant?.src || '';
@@ -546,31 +546,58 @@
     setDownload(els.downloadLarge, els.downloadLargeMeta, photo, large, '高清版', '-HD');
     setDownload(els.downloadWeb, els.downloadWebMeta, photo, web, '轻巧版', '-WEB');
 
-    // Video
+    // Start every photo on the still preview. The video is loaded only after
+    // the visitor chooses the dynamic wallpaper.
     els.lightboxVideo.pause();
     els.lightboxVideo.classList.remove('is-playing');
     els.lightboxVideo.removeAttribute('src');
     els.lightboxVideo.removeAttribute('poster');
-    els.mediaBadge.hidden = !hasVideo;
-    els.mediaHint.hidden = !hasVideo;
-    els.lightboxMedia.classList.toggle('has-video', hasVideo);
+    els.lightboxVideo.removeAttribute('data-src');
+    els.lightboxVideo.removeAttribute('data-fallback');
+    els.lightboxVideo.load();
+    els.lightboxVideo.hidden = true;
+    els.lightboxImage.hidden = false;
+    els.mediaBadge.hidden = true;
+    els.mediaHint.hidden = true;
+    els.lightboxMedia.classList.remove('has-video', 'is-video');
+    els.lightboxMedia.onclick = null;
+    state.mediaMode = 'image';
 
     if (hasVideo) {
       els.lightboxVideo.poster = photo.video.poster || imageVariant?.src || '';
-      els.lightboxVideo.src = photo.video.src;
-      els.lightboxVideo.setAttribute('aria-label', `${photo.title || '照片'}的动态循环预览`);
-      els.lightboxVideo.load();
-      if (!reduceMotion) {
-        const attempt = els.lightboxVideo.play();
-        if (attempt?.catch) attempt.catch(() => {});
-      }
-      els.lightboxVideo.onplaying = () => els.lightboxVideo.classList.add('is-playing');
+      els.lightboxVideo.dataset.src = photo.video.preview?.src || photo.video.src;
+      els.lightboxVideo.dataset.fallback = photo.video.src;
+      els.lightboxVideo.setAttribute('aria-label', `${photo.title || '照片'}的动态壁纸预览`);
+      els.lightboxMedia.classList.add('has-video');
       els.lightboxVideo.onerror = () => {
-        els.lightboxVideo.classList.remove('is-playing');
+        const current = els.lightboxVideo.getAttribute('src');
+        const originalSrc = els.lightboxVideo.dataset.fallback;
+        if (originalSrc && current !== originalSrc) {
+          els.lightboxVideo.src = originalSrc;
+          els.lightboxVideo.load();
+          const attempt = els.lightboxVideo.play();
+          if (attempt?.catch) attempt.catch(() => {});
+          return;
+        }
+        state.mediaMode = 'image';
+        els.lightboxVideo.pause();
+        els.lightboxVideo.hidden = true;
+        els.lightboxImage.hidden = false;
         els.mediaBadge.hidden = true;
         els.mediaHint.hidden = true;
+        els.mediaNav.hidden = true;
       };
-      setText(els.mediaHint, reduceMotion ? '点击画面播放动态壁纸' : '点击画面暂停动态壁纸');
+      els.lightboxMedia.onclick = () => {
+        if (state.mediaMode !== 'video') return;
+        if (els.lightboxVideo.paused) {
+          const attempt = els.lightboxVideo.play();
+          if (attempt?.catch) attempt.catch(() => {});
+          setText(els.mediaHint, '点击画面暂停动态壁纸');
+        } else {
+          els.lightboxVideo.pause();
+          setText(els.mediaHint, '点击画面播放动态壁纸');
+        }
+      };
     }
 
     const videoMeta = [];
@@ -588,50 +615,42 @@
       setText(els.downloadVideoMeta, videoMeta.join(' · '));
     }
 
-    // Preload neighbours for a snappier next/prev.
-    const index = state.visiblePhotos.findIndex((item) => item.id === photo.id);
-    [index - 1, index + 1].forEach((i) => {
-      const neighbour = state.visiblePhotos[(i + state.visiblePhotos.length) % state.visiblePhotos.length];
-      if (neighbour) {
-        const preload = new Image();
-        preload.src = neighbour.variants?.large?.src || neighbour.variants?.web?.src || '';
+    updateMediaNav();
+  }
+
+  function updateMediaNav() {
+    const hasVideo = Boolean(els.lightboxVideo.dataset.src);
+    els.mediaNav.hidden = !hasVideo;
+    if (!hasVideo) return;
+    const videoMode = state.mediaMode === 'video';
+    els.prevPhoto.disabled = !videoMode;
+    els.nextPhoto.disabled = videoMode;
+  }
+
+  function setMediaMode(mode) {
+    if (!els.lightboxVideo.dataset.src) mode = 'image';
+    state.mediaMode = mode === 'video' ? 'video' : 'image';
+    const videoMode = state.mediaMode === 'video';
+    els.lightboxImage.hidden = videoMode;
+    els.lightboxVideo.hidden = !videoMode;
+    els.lightboxMedia.classList.toggle('is-video', videoMode);
+    els.mediaBadge.hidden = !videoMode;
+    els.mediaHint.hidden = !videoMode;
+
+    if (videoMode) {
+      if (!els.lightboxVideo.getAttribute('src')) {
+        els.lightboxVideo.src = els.lightboxVideo.dataset.src;
+        els.lightboxVideo.load();
       }
-    });
-    els.lightboxVideo.onclick = null;
-    els.lightboxMedia.onclick = hasVideo
-      ? () => {
-          if (els.lightboxVideo.paused) {
-            const attempt = els.lightboxVideo.play();
-            if (attempt?.catch) attempt.catch(() => {});
-            setText(els.mediaHint, '点击画面暂停动态壁纸');
-          } else {
-            els.lightboxVideo.pause();
-            setText(els.mediaHint, '点击画面播放动态壁纸');
-          }
-        }
-      : null;
-  }
-
-  function updateNav() {
-    const total = state.visiblePhotos.length;
-    const index = state.visiblePhotos.findIndex((photo) => photo.id === state.currentId);
-    setText(els.lightboxPosition, `${pad2(index + 1)} / ${pad2(total)}`);
-    els.prevPhoto.disabled = total <= 1;
-    els.nextPhoto.disabled = total <= 1;
-  }
-
-  function stepPhoto(direction) {
-    if (!state.visiblePhotos.length || !state.currentId) return;
-    const index = state.visiblePhotos.findIndex((photo) => photo.id === state.currentId);
-    if (index < 0) return;
-    const total = state.visiblePhotos.length;
-    const next = (index + direction + total) % total;
-    const photo = state.visiblePhotos[next];
-    if (!photo) return;
-    state.currentId = photo.id;
-    fillLightbox(photo);
-    writeDeepLink(photo.id);
-    updateNav();
+      if (!reduceMotion) {
+        const attempt = els.lightboxVideo.play();
+        if (attempt?.catch) attempt.catch(() => {});
+      }
+      setText(els.mediaHint, reduceMotion ? '点击画面播放动态壁纸' : '点击画面暂停动态壁纸');
+    } else {
+      els.lightboxVideo.pause();
+    }
+    updateMediaNav();
   }
 
   function closeLightbox() {
@@ -654,8 +673,8 @@
   function bindEvents() {
     els.enterButton.addEventListener('click', openDoor);
     els.lightboxClose.addEventListener('click', closeLightbox);
-    els.prevPhoto.addEventListener('click', () => stepPhoto(-1));
-    els.nextPhoto.addEventListener('click', () => stepPhoto(1));
+    els.prevPhoto.addEventListener('click', () => setMediaMode('image'));
+    els.nextPhoto.addEventListener('click', () => setMediaMode('video'));
 
     els.lightbox.addEventListener('cancel', (event) => {
       event.preventDefault();
@@ -666,12 +685,13 @@
     });
     document.addEventListener('keydown', (event) => {
       if (!els.lightbox.open) return;
+      if (els.mediaNav.hidden) return;
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        stepPhoto(-1);
+        setMediaMode('image');
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        stepPhoto(1);
+        setMediaMode('video');
       }
     });
 

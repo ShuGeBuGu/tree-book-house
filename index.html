@@ -195,16 +195,15 @@
       <div class="lightbox__visual">
         <div class="lightbox__media" id="lightboxMedia">
           <img id="lightboxImage" alt="">
-          <video id="lightboxVideo" muted loop playsinline preload="metadata" aria-label="照片的动态循环预览"></video>
+          <video id="lightboxVideo" muted loop playsinline preload="none" aria-label="照片的动态壁纸预览" hidden></video>
           <div class="media-badge" id="mediaBadge"><span></span> LIVE PREVIEW</div>
           <div class="media-hint" id="mediaHint">动态壁纸为静音循环预览</div>
         </div>
-        <div class="lightbox__media-nav">
-          <button type="button" class="round-button" id="prevPhoto" aria-label="上一张照片">
+        <div class="lightbox__media-nav" id="lightboxMediaNav" hidden>
+          <button type="button" class="round-button" id="prevPhoto" aria-label="查看静态预览">
             <svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <span id="lightboxPosition">01 / 01</span>
-          <button type="button" class="round-button" id="nextPhoto" aria-label="下一张照片">
+          <button type="button" class="round-button" id="nextPhoto" aria-label="查看动态壁纸">
             <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>

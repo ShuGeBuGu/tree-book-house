@@ -1104,11 +1104,15 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .lightbox__media img { position: relative; z-index: 1; }
 .lightbox__media video {
   position: absolute; z-index: 2;
-  opacity: 0;
+  opacity: 1;
   transition: opacity .4s ease;
   background: #f7e9dd;
 }
-.lightbox__media video.is-playing { opacity: 1; }
+.lightbox__media img[hidden],
+.lightbox__media video[hidden],
+.lightbox__media-nav[hidden],
+.media-badge[hidden],
+.media-hint[hidden] { display: none !important; }
 .media-badge {
   position: absolute; z-index: 5;
   top: 14px; left: 14px;
@@ -1149,6 +1153,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   color: var(--ink-soft);
   font-size: 9.5px; letter-spacing: .15em;
 }
+.lightbox__media-nav .round-button:disabled { opacity: .32; cursor: default; }
 .round-button {
   display: grid; place-items: center;
   width: 36px; height: 36px;
