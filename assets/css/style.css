@@ -935,6 +935,22 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   box-shadow: 0 22px 45px rgba(109, 77, 58, .13);
 }
 .about__aside--tip:focus-visible { outline: 2px solid var(--pink-deep); outline-offset: 4px; }
+.tip-entry__art {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  width: min(46%, 202px);
+  height: auto;
+  overflow: visible;
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 14px 20px rgba(89, 61, 45, .1));
+  pointer-events: none;
+  transition: transform .5s var(--ease-soft);
+}
+.about__aside--tip:hover .tip-entry__art { transform: translateY(-4px) rotate(-1deg); }
+.about__aside--tip .about__moon { top: 22px; right: 28px; width: 78px; height: 78px; opacity: .28; }
+.about__aside--tip .about__flower { opacity: .22; }
 .tip-entry__kicker {
   position: relative;
   z-index: 3;
@@ -1404,12 +1420,16 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   .about h2 { font-size: 29px; }
   .about p { font-size: 12.5px; line-height: 1.9; }
   .about__aside { min-height: 250px; border-radius: 24px; padding: 22px; }
+  .about__aside--tip { min-height: 310px; }
+  .tip-entry__art { width: min(42%, 175px); top: 12px; right: 12px; }
   .about__moon { width: 55px; height: 55px; top: 20px; right: 20px; }
   .about__aside > p { font-size: 25px; }
   .tip-entry__body { padding-top: 34px; }
   .tip-entry__title { font-size: 27px; }
   .tip-entry__sub { font-size: 9.5px; }
   .tip-entry__cta { margin-top: 15px; padding: 9px 9px 9px 14px; }
+  .about__aside--tip { min-height: 305px; }
+  .tip-entry__art { width: 132px; top: 12px; right: 12px; }
   .site-footer { flex-direction: column; align-items: flex-start; gap: 13px; padding-top: 20px; padding-bottom: 24px; }
   .site-footer__meta { width: 100%; justify-content: space-between; }
   .lightbox__shell {
