@@ -14,7 +14,7 @@
   const THUMB_QUALITY = 0.78;
   const VIDEO_PREVIEW_BITRATE = 2_000_000;
   const QUEUE_MAX = 30;
-  const VIDEO_MAX = 60 * 1024 * 1024;
+  const VIDEO_MAX = 95 * 1024 * 1024;
   const VIDEO_EXTENSIONS = new Set(['mp4', 'webm']);
   const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif']);
 
