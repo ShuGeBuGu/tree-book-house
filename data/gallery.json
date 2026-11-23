@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-06",
+  "updatedAt": "2026-11-23",
   "site": {
     "title": "树屋",
     "englishName": "Tree Book House",
@@ -53,6 +53,25 @@
         "height": 360,
         "bytes": 50846,
         "ext": "jpg"
+      },
+      "video": {
+        "src": "media/group-16dhjqu/20261106-131535-a6k4/wallpaper-mwsyi2ml.mp4",
+        "poster": "media/group-16dhjqu/20261106-131535-a6k4/web.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 5,
+        "bytes": 12567384,
+        "width": 1920,
+        "height": 1080,
+        "preview": {
+          "src": "media/group-16dhjqu/20261106-131535-a6k4/video-preview-mwsyi2ml.webm",
+          "width": 1280,
+          "height": 720,
+          "seconds": 5,
+          "bytes": 1389146,
+          "type": "video/webm",
+          "ext": "webm"
+        }
       }
     }
   ]
