@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-23",
+  "updatedAt": "2026-11-27",
   "site": {
     "title": "树屋",
     "englishName": "Tree Book House",
@@ -14,6 +14,66 @@
     }
   ],
   "photos": [
+    {
+      "id": "20261127-103752-it56",
+      "group": "group-16dhjqu",
+      "title": "冰月梦乡的歌者",
+      "note": "在冰与星光编织的秘境，歌者轻轻落座。没有喧嚣，只有弯月、冰花与流转的柔光。哥伦比娅藏起视线，将情绪藏进风里，这里是属于她的、安静温柔的一方小梦乡。",
+      "date": "2026-11-27",
+      "original": {
+        "width": 3840,
+        "height": 2160
+      },
+      "preview": {
+        "src": "media/group-16dhjqu/20261127-103752-it56/preview.jpg",
+        "width": 1280,
+        "height": 720,
+        "bytes": 186964,
+        "ext": "jpg"
+      },
+      "thumb": {
+        "src": "media/group-16dhjqu/20261127-103752-it56/thumb.jpg",
+        "width": 640,
+        "height": 360,
+        "bytes": 53074,
+        "ext": "jpg"
+      },
+      "variants": {
+        "large": {
+          "src": "media/group-16dhjqu/20261127-103752-it56/large.jpg",
+          "width": 3840,
+          "height": 2160,
+          "bytes": 5222834,
+          "ext": "jpg"
+        },
+        "web": {
+          "src": "media/group-16dhjqu/20261127-103752-it56/web.jpg",
+          "width": 1920,
+          "height": 1080,
+          "bytes": 1774606,
+          "ext": "jpg"
+        }
+      },
+      "video": {
+        "src": "media/group-16dhjqu/20261127-103752-it56/wallpaper.mp4",
+        "poster": "media/group-16dhjqu/20261127-103752-it56/web.jpg",
+        "type": "video/mp4",
+        "ext": "mp4",
+        "seconds": 4.8,
+        "bytes": 12101821,
+        "width": 1920,
+        "height": 1080,
+        "preview": {
+          "src": "media/group-16dhjqu/20261127-103752-it56/video-preview.webm",
+          "width": 1280,
+          "height": 720,
+          "seconds": 4.8,
+          "bytes": 1362220,
+          "type": "video/webm",
+          "ext": "webm"
+        }
+      }
+    },
     {
       "id": "20261106-131535-a6k4",
       "group": "group-16dhjqu",
